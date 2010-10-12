@@ -52,6 +52,8 @@ class MouseInteraction(Behavior):
         self.connect("button-release-event")
         self.connect("motion-notify-event")
 
+    area = None
+
     _button_down = False
     _dragging = False
     _canvas = None
@@ -65,11 +67,26 @@ class MouseInteraction(Behavior):
         if not self._canvas:
             self._canvas = item.get_canvas()
 
+    def point_in_area(self, point, bounds):
+        if not bounds.x1 <= point[0] <= bounds.x2:
+            return False
+
+        if not bounds.y1 <= point[1] <= bounds.y2:
+            return False
+
+        return True
+
     def on_button_press_event(self, item, target, event):
+
+        if self.area:
+            if not self.point_in_area(self.abs, self.area):
+                return False
+
         self._common(item, target, event)
         self.mdown = (event.x, event.y)
         self._button_down = True
         self.button_press()
+        return True
 
     def on_button_release_event(self, item, target, event):
         self._common(item, target, event)
@@ -80,6 +97,7 @@ class MouseInteraction(Behavior):
         self._dragging = False
         self._button_down = False
         self.button_release()
+        return True
 
     def on_motion_notify_event(self, item, target, event):
         self._common(item, target, event)
@@ -93,6 +111,7 @@ class MouseInteraction(Behavior):
             self.drag_start()
         if self._dragging:
             self.move()
+        return True
 
     def button_press(self):
         pass
@@ -116,6 +135,11 @@ class VelocityController(MouseInteraction):
 
     _velocity = 0
 
+    def observe(self, instance):
+        self.area = goocanvas.Bounds(instance.day_width, 0, instance.width,
+            instance.hour_height)
+        MouseInteraction.observe(self, instance)
+
     def button_press(self):
         self._velocity = 0
 
@@ -132,14 +156,12 @@ class VelocityController(MouseInteraction):
     def drag_end(self):
         self._velocity = self.delta[0] / self.instance.day_width
         gobject.timeout_add(20, self._move)
-        self.instance.changed(False)
 
     def _move(self):
         self.instance.date -= self._velocity
         self._velocity *= 0.99
         if 0 < abs(self._velocity) < 0.01:
             self._velocity = 0
-        self.instance.changed(False)
         return bool(self._velocity)
 
 class Schedule(object):
@@ -187,6 +209,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self._model = Schedule("schedule.csv")
         self.scrolling = VelocityController()
         self.scrolling.observe(self)
+        self.connect("notify", self.do_notify)
 
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
