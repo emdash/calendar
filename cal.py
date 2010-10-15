@@ -246,8 +246,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
         self.day_width = self.width / 8
         self._model = Schedule("schedule.csv")
-        self.scrolling = VelocityController()
-        self.scrolling.observe(self)
         self.connect("notify", self.do_notify)
 
     def get_date(self, i):
@@ -424,6 +422,9 @@ class CalendarItem(goocanvas.Group):
 
         adj.connect("value-changed", update_scroll_pos)
         adj.props.value = datetime.datetime.now().hour * HOUR_HEIGHT
+        self.scrolling = VelocityController()
+        self.scrolling.observe(self.schedule)
+
 
 
 w = gtk.Window()
