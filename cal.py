@@ -2,11 +2,28 @@ import gtk
 import goocanvas
 import gobject
 import datetime
+import math
 
 WIDTH = 600
 HEIGHT = 400
 DAY_WIDTH = WIDTH / 8
 HOUR_HEIGHT = 50
+
+#TODO: moving events
+#TODO: edit the name of an event
+#TODO: change the duration of an event
+#TODO: adding events
+#TODO: deleting events
+#TODO: repeating events
+#TODO: event alarms
+#TODO: sync with google calendar
+#TODO: sync with facebook calendar
+#TODO: sync with evolution ??
+#TODO: status bar
+#TODO: event navigation (today, next week, previous week)
+#TODO: make calendar view "roll" so that sunday is always on the left
+#TODO: zooming support
+#TODO: add license and copyright information
 
 class Event(object):
 
