@@ -24,6 +24,7 @@ import goocanvas
 import gobject
 import datetime
 import math
+from gettext import gettext as _
 
 WIDTH = 600
 HEIGHT = 400
