@@ -45,7 +45,6 @@ HOUR_HEIGHT = 50
 #TODO: event navigation (today, next week, previous week)
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
-#TODO: add license and copyright information
 #TODO: resize canvas when window size changes
 
 class Event(object):
