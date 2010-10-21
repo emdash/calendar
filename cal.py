@@ -179,6 +179,36 @@ class MouseInteraction(Behavior):
     def click(self):
         pass
 
+class Selector(MouseInteraction):
+
+    def __init__(self, marquee):
+        self.marquee = marquee
+
+    def drag_start(self):
+        self.marquee.props.visibility = goocanvas.ITEM_VISIBLE
+        self.update_marquee()
+
+    def move(self):
+        self.update_marquee()
+
+    def drag_end(self):
+        self.marquee.props.visibility = goocanvas.ITEM_INVISIBLE
+
+    def update_marquee(self):
+
+        # normalize to x, y, width, height with positive values
+        x1 = min(self.mdown[0], self.abs[0])
+        y1 = min(self.mdown[1], self.abs[1])
+        x2 = max(self.mdown[0], self.abs[0])
+        y2 = max(self.mdown[1], self.abs[1])
+        width = x2 - x1
+        height = y2 - y1
+
+        self.marquee.props.x = x1
+        self.marquee.props.y = y1
+        self.marquee.props.width = width
+        self.marquee.props.height = height
+
 class VelocityController(MouseInteraction):
 
     _velocity = 0
@@ -434,6 +464,13 @@ class CalendarItem(goocanvas.Group):
         self.scrolling = VelocityController()
         self.scrolling.observe(self.schedule)
 
+        self.marquee = goocanvas.Rect(parent=self,
+            fill_color_rgba=0xFFFFFF55,
+            stroke_color_rgba=0xFFFFFFCC,
+            visibility=goocanvas.ITEM_INVISIBLE)
+
+        self.selection = Selector(self.marquee)
+        self.selection.observe(self.schedule)
 
 
 w = gtk.Window()
