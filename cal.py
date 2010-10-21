@@ -116,7 +116,6 @@ class MouseInteraction(Behavior):
         return True
 
     def on_button_press_event(self, item, target, event):
-
         if self.area:
             if not self.point_in_area(self.abs, self.area):
                 return False
@@ -129,16 +128,20 @@ class MouseInteraction(Behavior):
 
     def on_button_release_event(self, item, target, event):
         self._common(item, target, event)
+        ret = False
         if self._dragging:
             self.drag_end()
-        else:
+            ret = True
+        elif self._button_down:
             self.click()
+            ret = True
         self._dragging = False
         self._button_down = False
         self.button_release()
-        return True
+        return ret
 
     def on_motion_notify_event(self, item, target, event):
+        ret = False
         self._common(item, target, event)
         self.last = self.abs
         self.abs = self._canvas.convert_from_pixels(event.x, event.y)
@@ -148,9 +151,12 @@ class MouseInteraction(Behavior):
         if self._button_down and (not self._dragging):
             self._dragging = True
             self.drag_start()
+            ret = True
         if self._dragging:
             self.move()
-        return True
+            ret = True
+        self.motion_notify()
+        return ret
 
     def button_press(self):
         pass
@@ -159,6 +165,9 @@ class MouseInteraction(Behavior):
         pass
 
     def drag_start(self):
+        pass
+
+    def motion_notify(self):
         pass
 
     def drag_end(self):
