@@ -561,6 +561,30 @@ class Command(object):
         for sbcls in cls.__subclasses__():
             sbls.action.set_sensitive(sbcls.can_do(app))
 
+class NewEvent(Command):
+
+    labnel = _("New Event")
+    tooltip = _("Add a new event")
+    stockid = gtk.STOCK_ADD
+
+    @classmethod
+    def can_do(cls, app):
+        return app.selection_start and app.selection_end
+
+    def configure(self):
+        start = self.app.schedule.selected_start
+        end = self.app.schedule.selected_end
+        self.event = Event(start, end, "New Event")
+
+    def do(self):
+        self.app.model.add_event(self.event)
+        self.app.schedule.selected_start = None
+        self.app.schedule.selected_end = None
+        return False
+
+    def undo(self):
+        return False
+
 class App(object):
 
     ui = """
