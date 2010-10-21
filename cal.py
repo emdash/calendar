@@ -46,6 +46,9 @@ HOUR_HEIGHT = 50
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
 #TODO: resize canvas when window size changes
+#TODO: get rid of selector marquee
+#TODO: show start time and duration on selector
+#TODO: change cursors
 
 class Event(object):
 
