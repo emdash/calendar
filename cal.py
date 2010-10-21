@@ -556,15 +556,54 @@ class Command(object):
             sbcls.action = action
         return ret
 
-w = gtk.Window()
-w.connect("destroy", gtk.main_quit)
-hbox = gtk.HBox()
-canvas = goocanvas.Canvas()
-canvas.get_root_item().add_child(CalendarItem())
-canvas.set_size_request(WIDTH, HEIGHT)
-canvas.show()
-hbox.pack_start(canvas)
-hbox.pack_start(gtk.VScrollbar(adj), False, False)
-w.add(hbox)
-w.show_all()
-gtk.main()
+    @classmethod
+    def update_actions(cls, app):
+        for sbcls in cls.__subclasses__():
+            sbls.action.set_sensitive(sbcls.can_do(app))
+
+class App(object):
+
+    ui = """
+    <ui>
+        <toolbar name="mainToolBar">
+            <toolitem action="NewEvent"/>
+        </toolbar>
+    </ui>"""
+
+
+    def __init__(self):
+        w = gtk.Window()
+        w.connect("destroy", gtk.main_quit)
+        vbox = gtk.VBox()
+        uiman = gtk.UIManager ()
+        actiongroup = Command.create_action_group(self)
+        uiman.insert_action_group(actiongroup)
+        uiman.add_ui_from_string(self.ui)
+        toolbar = uiman.get_widget("/mainToolBar")
+        vbox.pack_start (toolbar, False, False)
+        hbox = gtk.HBox()
+        canvas = goocanvas.Canvas()
+        self.calendar_item = CalendarItem()
+        self.schedule = self.calendar_item.schedule
+        self.model = self.schedule.model
+        canvas.get_root_item().add_child(self.calendar_item)
+        canvas.set_size_request(WIDTH, HEIGHT)
+        canvas.show()
+        hbox.pack_start(canvas)
+        hbox.pack_start(gtk.VScrollbar(adj), False, False)
+        vbox.pack_start(hbox)
+        w.add(vbox)
+        w.show_all()
+
+    def update_actions(self):
+        Command.update_actions()
+
+    def run(self):
+        gtk.main()
+
+    def do_command(self, unused_action, command):
+        cmd = command(self)
+        cmd.configure()
+        cmd.do()
+
+App().run()
