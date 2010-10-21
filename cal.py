@@ -522,6 +522,39 @@ class CalendarItem(goocanvas.Group):
         self.selection = Selector(self.marquee)
         self.selection.observe(self.schedule)
 
+class Command(object):
+
+    label = ""
+    stockid = None
+    tooltip = None
+
+    def __init__(self, app):
+        self.app = app
+        self.configure()
+
+    def configure(self):
+        pass
+
+    def do(self):
+        return False
+
+    def undo(self):
+        return False
+
+    @classmethod
+    def can_do(cls, app):
+        return True
+
+    @classmethod
+    def create_action_group(cls, app):
+        ret = gtk.ActionGroup("command_actions")
+        for sbcls in cls.__subclasses__():
+            action = gtk.Action(sbcls.__name__, sbcls.label, sbcls.tooltip,
+                sbcls.stockid)
+            action.connect("activate", app.do_command, sbcls)
+            ret.add_action(action)
+            sbcls.action = action
+        return ret
 
 w = gtk.Window()
 w.connect("destroy", gtk.main_quit)
