@@ -294,7 +294,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
         self.day_width = self.width / 8
-        self._model = Schedule("schedule.csv")
+        self.model = Schedule("schedule.csv")
         self.connect("notify", self.do_notify)
 
     def get_date(self, i):
@@ -492,7 +492,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return [(event.start.hour + (event.start.minute / 60.0), 
             event.get_duration().seconds / 60.0/ 60.0,
             event.description)
-                for event in self._model.get_events(date)]
+                for event in self.model.get_events(date)]
 
 
 adj = gtk.Adjustment()
