@@ -194,6 +194,10 @@ class Selector(MouseInteraction):
     def drag_end(self):
         self.marquee.props.visibility = goocanvas.ITEM_INVISIBLE
 
+    def click(self):
+        self.instance.selection_start = None
+        self.instance.selected_end = None
+
     def update_marquee(self):
 
         # normalize to x, y, width, height with positive values
@@ -208,6 +212,9 @@ class Selector(MouseInteraction):
         self.marquee.props.y = y1
         self.marquee.props.width = width
         self.marquee.props.height = height
+
+        # constrain selection to the day where the mouse was first clicked.
+        self.instance.select_area (self.mdown[0], y1, width, height)
 
 class VelocityController(MouseInteraction):
 
@@ -280,6 +287,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     date = gobject.property(type=float,
         default=datetime.date.today().toordinal())
     y_scroll_offset = gobject.property(type=int, default=0)
+    selected_start = gobject.property(type=gobject.TYPE_PYOBJECT)
+    selected_end = gobject.property(type=gobject.TYPE_PYOBJECT)
 
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
@@ -289,6 +298,30 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
+
+    def point_to_datetime(self, x, y):
+        hour = ((y + (- self.y_scroll_offset)- self.hour_height) /
+            self.hour_height)
+        minute = hour % 1 * 60
+
+        date =  int(self.date + (x - self.day_width)
+            / self.day_width)
+        ret = datetime.datetime.fromordinal(date)
+        delta = datetime.timedelta(hours=int(hour), minutes=minute)
+        return ret + delta
+
+    def datetime_to_point(self, dt):
+        if self.date < dt.toordinal() < self.date + (self.width /
+            self.day_width):
+            return (
+                ((dt.toordinal() - self.date + 1) * self.day_width),
+                (dt.hour + 1 + dt.minute / 60.0)
+                    * self.hour_height + self.y_scroll_offset)
+            
+        return None
+
+    def point_to_event(self, x, y):
+        return None
 
     def do_notify(self, something, something_else):
         self.day_width = self.width / 8
@@ -436,6 +469,22 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.set_source_rgb(0, 0, 0)
         self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%D"),
             0, 0, self.day_width, self.hour_height)
+
+        if self.selected_start and self.selected_end:
+            start = self.datetime_to_point(self.selected_start)
+            end = self.datetime_to_point(self.selected_end)
+            if start and end:
+                x1, y1 = start
+                x2, y2 = end
+                cr.set_source_rgba(0, 0, 0, 0.25)
+                height = y2 - y1
+                cr.rectangle(x1, y1, self.day_width, height)
+                cr.fill()
+
+    def select_area(self, x, y, width, height):
+        self.selected_start = self.point_to_datetime (x, y)
+        # constrain selection to a single day
+        self.selected_end = self.point_to_datetime(x, y + height)
 
     def get_schedule(self, date):
         # test schedule
