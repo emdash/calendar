@@ -187,18 +187,14 @@ class MouseInteraction(Behavior):
 
 class Selector(MouseInteraction):
 
-    def __init__(self, marquee):
-        self.marquee = marquee
+    def __init__(self):
+        self.selected = None
 
     def drag_start(self):
-        #self.marquee.props.visibility = goocanvas.ITEM_VISIBLE
         self.update_marquee()
 
     def move(self):
         self.update_marquee()
-
-    def drag_end(self):
-        self.marquee.props.visibility = goocanvas.ITEM_INVISIBLE
 
     def click(self):
         self.instance.selection_start = None
@@ -213,11 +209,6 @@ class Selector(MouseInteraction):
         y2 = max(self.mdown[1], self.abs[1])
         width = x2 - x1
         height = y2 - y1
-
-        self.marquee.props.x = x1
-        self.marquee.props.y = y1
-        self.marquee.props.width = width
-        self.marquee.props.height = height
 
         # constrain selection to the day where the mouse was first clicked.
         self.instance.select_area (self.mdown[0], y1, width, height,
@@ -579,13 +570,7 @@ class CalendarItem(goocanvas.Group):
         adj.props.value = datetime.datetime.now().hour * HOUR_HEIGHT
         self.scrolling = VelocityController()
         self.scrolling.observe(self.schedule)
-
-        self.marquee = goocanvas.Rect(parent=self,
-            fill_color_rgba=0xFFFFFF55,
-            stroke_color_rgba=0xFFFFFFCC,
-            visibility=goocanvas.ITEM_INVISIBLE)
-
-        self.selection = Selector(self.marquee)
+        self.selection = Selector()
         self.selection.observe(self.schedule)
 
 class Command(object):
