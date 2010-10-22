@@ -34,7 +34,6 @@ HOUR_HEIGHT = 50
 #TODO: moving events
 #TODO: edit the name of an event
 #TODO: change the duration of an event
-#TODO: adding events
 #TODO: deleting events
 #TODO: repeating events
 #TODO: event alarms
