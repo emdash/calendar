@@ -256,9 +256,10 @@ class VelocityController(MouseInteraction):
 class Schedule(object):
 
     def __init__(self, path):
-
         self.events = []
         self.by_date = {}
+        self.callback = None
+        self.args = None
         self.load(path)
 
     def add_event(self, event):
@@ -279,6 +280,10 @@ class Schedule(object):
             end = datetime.datetime.strptime(end.strip(), "%m/%d/%Y:%H:%M:%S")
             self.add_event(Event(start, end, description.strip()))
 
+    def set_changed_cb(self, callback, *args):
+        self.callback = callback
+        self.args = args
+
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     __gtype_name__ = "CalendarBase"
@@ -298,7 +303,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
         self.day_width = self.width / 8
         self.model = Schedule("schedule.csv")
+        self.model.set_changed_cb(self.model_changed)
         self.connect("notify", self.do_notify)
+
+    def model_changed(self):
+        self.changed(False)
 
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
