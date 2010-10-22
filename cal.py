@@ -49,7 +49,6 @@ HOUR_HEIGHT = 50
 #TODO: show start time and duration on selector
 #TODO: change cursors
 #TODO: snap to grid (shift to disable)
-#TODO: implement undo and redo
 #FIXME: selector is shown over calendar heading
 
 class Event(object):
@@ -556,6 +555,7 @@ class Command(object):
             action = gtk.Action(sbcls.__name__, sbcls.label, sbcls.tooltip,
                 sbcls.stockid)
             action.connect("activate", app.do_command, sbcls)
+            action.set_sensitive(sbcls.can_do(app))
             ret.add_action(action)
             sbcls.action = action
         return ret
@@ -563,7 +563,7 @@ class Command(object):
     @classmethod
     def update_actions(cls, app):
         for sbcls in cls.__subclasses__():
-            sbls.action.set_sensitive(sbcls.can_do(app))
+            sbcls.action.set_sensitive(sbcls.can_do(app))
 
 class NewEvent(Command):
 
@@ -573,7 +573,8 @@ class NewEvent(Command):
 
     @classmethod
     def can_do(cls, app):
-        return app.selection_start and app.selection_end
+        return app.schedule.selected_start != None and\
+            app.schedule.selected_end != None
 
     def configure(self):
         start = self.app.schedule.selected_start
@@ -584,31 +585,63 @@ class NewEvent(Command):
         self.app.model.add_event(self.event)
         self.app.schedule.selected_start = None
         self.app.schedule.selected_end = None
-        return False
+        return True
 
     def undo(self):
         return False
+
+class UndoStack(object):
+
+    def __init__(self):
+        self.undo_stack = []
+        self.redo_stack = []
+        self.undo_action = gtk.Action("Undo", None, None, gtk.STOCK_UNDO)
+        self.undo_action.set_sensitive(False)
+        self.undo_action.connect("activate", self.undo)
+        self.redo_action = gtk.Action("Redo", None, None, gtk.STOCK_REDO)
+        self.redo_action.set_sensitive(False)
+        self.redo_action.connect("activate", self.redo)
+
+    def commit(self, action):
+        # an action will return True if it can be undone
+        if action.do():
+            self.undo_stack.append(action)
+            self.redo_stack = []
+            self.redo_action.set_sensitive(False)
+            self.undo_action.set_sensitive(True)
+
+    def undo(self, unused_action):
+        action = self.undo_stack.pop()
+        action.undo()
+        self.redo_stack.append(action)
+        self.undo_action.set_sensitive(len(self.undo_stack))
+        self.redo_action.set_sensitive(True)
+
+    def redo(self, unused_action):
+        action = self.redo_stack.pop()
+        action.undo()
+        self.undo_stack.append(action)
+        self.undo_action.set_sensitive(True)
+        self.redo_action.set_sensitive(len(self.redo_stack))
 
 class App(object):
 
     ui = """
     <ui>
         <toolbar name="mainToolBar">
+            <toolitem action="Undo"/>
+            <toolitem action="Redo"/>
+            <separator />
             <toolitem action="NewEvent"/>
         </toolbar>
     </ui>"""
 
 
     def __init__(self):
+        self.undo = UndoStack()
         w = gtk.Window()
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
-        uiman = gtk.UIManager ()
-        actiongroup = Command.create_action_group(self)
-        uiman.insert_action_group(actiongroup)
-        uiman.add_ui_from_string(self.ui)
-        toolbar = uiman.get_widget("/mainToolBar")
-        vbox.pack_start (toolbar, False, False)
         hbox = gtk.HBox()
         canvas = goocanvas.Canvas()
         self.calendar_item = CalendarItem()
@@ -619,12 +652,23 @@ class App(object):
         canvas.show()
         hbox.pack_start(canvas)
         hbox.pack_start(gtk.VScrollbar(adj), False, False)
-        vbox.pack_start(hbox)
+        vbox.pack_end(hbox)
+
+        uiman = gtk.UIManager ()
+        actiongroup = Command.create_action_group(self)
+        actiongroup.add_action(self.undo.undo_action)
+        actiongroup.add_action(self.undo.redo_action)
+        uiman.insert_action_group(actiongroup)
+        uiman.add_ui_from_string(self.ui)
+        toolbar = uiman.get_widget("/mainToolBar")
+        vbox.pack_start (toolbar, False, False)
+
         w.add(vbox)
         w.show_all()
+        self.schedule.connect("notify", self.update_actions)
 
-    def update_actions(self):
-        Command.update_actions()
+    def update_actions(self, *unused):
+        Command.update_actions(self)
 
     def run(self):
         gtk.main()
@@ -632,6 +676,6 @@ class App(object):
     def do_command(self, unused_action, command):
         cmd = command(self)
         cmd.configure()
-        cmd.do()
+        self.undo.commit(cmd)
 
 App().run()
