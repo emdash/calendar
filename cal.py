@@ -307,6 +307,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
         self.connect("notify", self.do_notify)
+        self.events = {}
+        self.selected = None
 
     def model_changed(self):
         self.changed(False)
@@ -339,6 +341,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return None
 
     def point_to_event(self, x, y):
+        for event, (ex, ey, width, height) in self.events.iteritems ():
+            if (ex <= x <= ex + width) and (ey <= y <= ey + height):
+                return event
+
         return None
 
     def do_notify(self, something, something_else):
@@ -395,6 +401,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
+        self.events = {}
         x = self.day_width - (self.date * self.day_width % self.day_width)
         y = self.x
         day = int (self.date)
@@ -455,18 +462,22 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         for i in xrange (0, 8):
             # vertical lines
 
-            for start, duration, text in self.get_schedule(self.date + i):
+            for start, duration, text, evt in self.get_schedule(self.date + i):
                 y = self.y_scroll_offset + start * self.hour_height +\
                     self.hour_height
                 height = duration * self.hour_height
 
                 cr.rectangle(x + 2, y, self.day_width - 4, height)
-                cr.set_source_rgba(0.55, 0.55, 0.55)
+                if evt == self.selected:
+                    cr.set_source_rgba(0.25, 0.25, 0.25)
+                else:
+                    cr.set_source_rgba(0.55, 0.55, 0.55)
                 cr.fill_preserve()
                 cr.set_source_rgb(0, 0, 0)
 
                 self.centered_text(cr, text, x + 2, y, self.day_width - 4,
                     height)
+                self.events[evt] = (x, y, self.day_width, height)
             x += self.day_width
 
         if self.selected_start and self.selected_end:
@@ -548,7 +559,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         # test schedule
         return [(event.start.hour + (event.start.minute / 60.0), 
             event.get_duration().seconds / 60.0/ 60.0,
-            event.description)
+            event.description,
+            event)
                 for event in self.model.get_events(date)]
 
 
