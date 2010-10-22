@@ -47,7 +47,6 @@ HOUR_HEIGHT = 50
 #TODO: zooming support (changes day_width/height size)
 #TODO: resize canvas when window size changes
 #TODO: change cursors
-#FIXME: selector is shown over calendar heading
 #TODO: start writing test cases, we've got too many features already
 
 def quantize(x, modulus):
@@ -480,6 +479,32 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                     height)
             x += self.day_width
 
+        if self.selected_start and self.selected_end:
+            start = self.datetime_to_point(self.selected_start)
+            end = self.datetime_to_point(self.selected_end)
+            if start and end:
+                x1, y1 = start
+                x2, y2 = end
+                cr.set_source_rgba(0, 0, 0, 0.25)
+                height = y2 - y1
+                cr.rectangle(x1, y1, self.day_width, height)
+                cr.fill()
+                cr.set_source_rgba(1, 1, 1, 1)
+
+                if height > self.hour_height:
+                    text = self.selected_start.strftime ("%H:%M:%S")
+                    self.text_below(cr, text, x1, y1 + 2, self.day_width)
+
+                    text = self.selected_end.strftime ("%H:%M:%S")
+                    self.text_above(cr, text, x1, y1 + height - 2, self.day_width)
+
+                duration = self.selected_end - self.selected_start
+                m = int (duration.seconds / 60) % 60
+                h = int (duration.seconds / 60 / 60)
+
+                text = "%dh %dm" % (h, m)
+                self.centered_text(cr, text, x1, y1, self.day_width, height)
+
         cr.restore()
 
         cr.save()
@@ -523,32 +548,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.set_source_rgb(0, 0, 0)
         self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%D"),
             0, 0, self.day_width, self.hour_height)
-
-        if self.selected_start and self.selected_end:
-            start = self.datetime_to_point(self.selected_start)
-            end = self.datetime_to_point(self.selected_end)
-            if start and end:
-                x1, y1 = start
-                x2, y2 = end
-                cr.set_source_rgba(0, 0, 0, 0.25)
-                height = y2 - y1
-                cr.rectangle(x1, y1, self.day_width, height)
-                cr.fill()
-                cr.set_source_rgba(1, 1, 1, 1)
-
-                if height > self.hour_height:
-                    text = self.selected_start.strftime ("%H:%M:%S")
-                    self.text_below(cr, text, x1, y1 + 2, self.day_width)
-
-                    text = self.selected_end.strftime ("%H:%M:%S")
-                    self.text_above(cr, text, x1, y1 + height - 2, self.day_width)
-
-                duration = self.selected_end - self.selected_start
-                m = int (duration.seconds / 60) % 60
-                h = int (duration.seconds / 60 / 60)
-
-                text = "%dh %dm" % (h, m)
-                self.centered_text(cr, text, x1, y1, self.day_width, height)
 
     def select_area(self, x, y, width, height, quantize=True):
         self.selected_start = self.point_to_datetime (x, y, quantize)
