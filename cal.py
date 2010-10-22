@@ -276,12 +276,15 @@ class Schedule(object):
         return self.by_date.get(int(date), [])
 
     def load(self, path):
-        data = open(path, "r").readlines()
-        for line in data:
-            start, end, description = line.split(",")
-            start = datetime.datetime.strptime(start.strip(), "%m/%d/%Y:%H:%M:%S")
-            end = datetime.datetime.strptime(end.strip(), "%m/%d/%Y:%H:%M:%S")
-            self.add_event(Event(start, end, description.strip()))
+        try:
+            data = open(path, "r").readlines()
+            for line in data:
+                start, end, description = line.split(",")
+                start = datetime.datetime.strptime(start.strip(), "%m/%d/%Y:%H:%M:%S")
+                end = datetime.datetime.strptime(end.strip(), "%m/%d/%Y:%H:%M:%S")
+                self.add_event(Event(start, end, description.strip()))
+        except IOError:
+            pass
 
     def set_changed_cb(self, callback, *args):
         self.callback = callback
