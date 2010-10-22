@@ -50,6 +50,7 @@ HOUR_HEIGHT = 50
 #TODO: change cursors
 #TODO: snap to grid (shift to disable)
 #FIXME: selector is shown over calendar heading
+#TODO: start writing test cases, we've got too many features already
 
 class Event(object):
 
