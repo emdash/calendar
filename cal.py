@@ -49,6 +49,10 @@ HOUR_HEIGHT = 50
 #TODO: resize canvas when window size changes
 #TODO: change cursors
 #TODO: start writing test cases, we've got too many features already
+#TODO: don't hard-code colors or drawing styles
+#TODO: port away from goocanvas ?
+#TODO: allow multiple selections
+#TODO: do something sane when events overlap
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
