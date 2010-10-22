@@ -637,7 +637,7 @@ class UndoStack(object):
 
     def redo(self, unused_action):
         action = self.redo_stack.pop()
-        action.undo()
+        action.do()
         self.undo_stack.append(action)
         self.undo_action.set_sensitive(True)
         self.redo_action.set_sensitive(len(self.redo_stack))
