@@ -199,8 +199,10 @@ class Selector(MouseInteraction):
     def click(self):
         self.instance.selection_start = None
         self.instance.selected_end = None
+        self.instance.select_point(*self.abs)
 
     def update_marquee(self):
+        self.instance.select_event(None)
 
         # normalize to x, y, width, height with positive values
         x1 = min(self.mdown[0], self.abs[0])
@@ -300,6 +302,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     y_scroll_offset = gobject.property(type=int, default=0)
     selected_start = gobject.property(type=gobject.TYPE_PYOBJECT)
     selected_end = gobject.property(type=gobject.TYPE_PYOBJECT)
+    selected = gobject.property(type=gobject.TYPE_PYOBJECT)
 
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
@@ -554,6 +557,13 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.selected_start = self.point_to_datetime (x, y, quantize)
         # constrain selection to a single day
         self.selected_end = self.point_to_datetime(x, y + height, quantize)
+
+    def select_point(self, x, y):
+        self.select_event(self.point_to_event(x, y))
+
+    def select_event(self, event):
+        self.selected = event
+        self.changed(False)
 
     def get_schedule(self, date):
         # test schedule
