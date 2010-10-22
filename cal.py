@@ -502,14 +502,13 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 height = y2 - y1
                 cr.rectangle(x1, y1, self.day_width, height)
                 cr.fill()
-                cr.set_source_rgba(1, 1, 1, 1)
+                cr.set_source_rgba(0, 0, 0, 0.75)
 
-                if height > self.hour_height:
-                    text = self.selected_start.strftime ("%H:%M:%S")
-                    self.text_below(cr, text, x1, y1 + 2, self.day_width)
+                text = self.selected_start.strftime ("%H:%M:%S")
+                self.text_above(cr, text, x1, y1 - 2, self.day_width)
 
-                    text = self.selected_end.strftime ("%H:%M:%S")
-                    self.text_above(cr, text, x1, y1 + height - 2, self.day_width)
+                text = self.selected_end.strftime ("%H:%M:%S")
+                self.text_below(cr, text, x1, y1 + height + 2, self.day_width)
 
                 duration = self.selected_end - self.selected_start
                 m = int (duration.seconds / 60) % 60
