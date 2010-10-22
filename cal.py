@@ -34,7 +34,6 @@ HOUR_HEIGHT = 50
 #TODO: moving events
 #TODO: edit the name of an event
 #TODO: change the duration of an event
-#TODO: deleting events
 #TODO: repeating events
 #TODO: event alarms
 #TODO: sync with google calendar
@@ -661,6 +660,29 @@ class NewEvent(Command):
         self.app.model.del_event(self.event)
         return True
 
+class DelEvent(Command):
+
+    label = _("Delete Event")
+    tooltip = _("Delete selected events")
+    stockid = gtk.STOCK_DELETE
+
+    @classmethod
+    def can_do(cls, app):
+        return app.schedule.selected != None
+
+    def configure(self):
+        self.event = self.app.schedule.selected
+
+    def do(self):
+        self.app.model.del_event(self.event)
+        self.app.schedule.selected = None
+        return True
+
+    def undo(self):
+        self.app.model.add_event(self.event)
+        return True
+
+
 class UndoStack(object):
 
     def __init__(self):
@@ -704,6 +726,7 @@ class App(object):
             <toolitem action="Redo"/>
             <separator />
             <toolitem action="NewEvent"/>
+            <toolitem action="DelEvent"/>
         </toolbar>
     </ui>"""
 
