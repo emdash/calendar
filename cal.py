@@ -36,11 +36,14 @@ HOUR_HEIGHT = 50
 #TODO: change the duration of an event
 #TODO: repeating events
 #TODO: event alarms
+#TODO: save to file
 #TODO: sync with google calendar
 #TODO: sync with facebook calendar
 #TODO: sync with evolution ??
 #TODO: status bar
-#TODO: event navigation (today, next week, previous week)
+#TODO: go to today
+#TODO: go to next week, previous week
+#TODO: go to selected
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
 #TODO: resize canvas when window size changes
