@@ -49,6 +49,8 @@ HOUR_HEIGHT = 50
 #TODO: show start time and duration on selector
 #TODO: change cursors
 #TODO: snap to grid (shift to disable)
+#TODO: implement undo and redo
+#FIXME: selector is shown over calendar heading
 
 class Event(object):
 
