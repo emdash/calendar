@@ -268,6 +268,14 @@ class Schedule(object):
         if not date in self.by_date:
             self.by_date[date] = []
         self.by_date[date].append(event)
+        if self.callback:
+            self.callback(*self.args)
+
+    def del_event(self, event):
+        self.events.remove(event)
+        self.by_date[event.get_date().toordinal()].remove(event)
+        if self.callback:
+            self.callback(*self.args)
 
     def get_events(self, date):
         return self.by_date.get(int(date), [])
