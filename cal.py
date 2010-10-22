@@ -605,7 +605,8 @@ class NewEvent(Command):
         return True
 
     def undo(self):
-        return False
+        self.app.model.del_event(self.event)
+        return True
 
 class UndoStack(object):
 
