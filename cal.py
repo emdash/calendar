@@ -46,7 +46,6 @@ HOUR_HEIGHT = 50
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
 #TODO: resize canvas when window size changes
-#TODO: show start time and duration on selector
 #TODO: change cursors
 #TODO: snap to grid (shift to disable)
 #FIXME: selector is shown over calendar heading
@@ -373,6 +372,30 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.show_text(text)
         cr.restore()
 
+    def text_above(self, cr, text, x, y, width):
+        cr.save()
+        tw, th = cr.text_extents(text)[2:4]
+        tw = min(width, tw)
+        th = th
+        cr.rectangle(x, y - th, width, th)
+        cr.clip()
+        cr.move_to (x + (width / 2) - tw / 2,
+            y)
+        cr.show_text(text)
+        cr.restore()
+
+    def text_below(self, cr, text, x, y, width):
+        cr.save()
+        tw, th = cr.text_extents(text)[2:4]
+        tw = min(width, tw)
+        th = th
+        cr.rectangle(x, y, width, th)
+        cr.clip()
+        cr.move_to (x + (width / 2) - tw / 2,
+            y + th)
+        cr.show_text(text)
+        cr.restore()
+
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
         x = self.day_width - (self.date * self.day_width % self.day_width)
@@ -502,6 +525,21 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 height = y2 - y1
                 cr.rectangle(x1, y1, self.day_width, height)
                 cr.fill()
+                cr.set_source_rgba(1, 1, 1, 1)
+
+                if height > self.hour_height:
+                    text = self.selected_start.strftime ("%H:%M:%S")
+                    self.text_below(cr, text, x1, y1 + 2, self.day_width)
+
+                    text = self.selected_end.strftime ("%H:%M:%S")
+                    self.text_above(cr, text, x1, y1 + height - 2, self.day_width)
+
+                duration = self.selected_end - self.selected_start
+                m = int (duration.seconds / 60) % 60
+                h = int (duration.seconds / 60 / 60)
+
+                text = "%dh %dm" % (h, m)
+                self.centered_text(cr, text, x1, y1, self.day_width, height)
 
     def select_area(self, x, y, width, height):
         self.selected_start = self.point_to_datetime (x, y)
