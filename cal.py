@@ -48,6 +48,7 @@ HOUR_HEIGHT = 50
 #TODO: resize canvas when window size changes
 #TODO: show start time and duration on selector
 #TODO: change cursors
+#TODO: snap to grid (shift to disable)
 
 class Event(object):
 
