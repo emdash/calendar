@@ -636,7 +636,7 @@ class Command(object):
 
 class NewEvent(Command):
 
-    labnel = _("New Event")
+    label = _("New Event")
     tooltip = _("Add a new event")
     stockid = gtk.STOCK_ADD
 
