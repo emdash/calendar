@@ -383,7 +383,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         tw = min(width, tw)
         th = min(height, th)
         cr.move_to (x + (width / 2) - tw / 2,
-            y + (height / 2) - th / 2)
+            y + (height / 2) + (th / 2))
         cr.show_text(text)
         cr.restore()
 
