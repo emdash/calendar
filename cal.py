@@ -47,9 +47,11 @@ HOUR_HEIGHT = 50
 #TODO: zooming support (changes day_width/height size)
 #TODO: resize canvas when window size changes
 #TODO: change cursors
-#TODO: snap to grid (shift to disable)
 #FIXME: selector is shown over calendar heading
 #TODO: start writing test cases, we've got too many features already
+
+def quantize(x, modulus):
+    return (x // modulus) * modulus
 
 class Event(object):
 
@@ -105,10 +107,12 @@ class MouseInteraction(Behavior):
     abs = (0, 0)
     rel = (0, 0)
     delta = (0, 0)
+    event = None
 
     def _common(self, item, target, event):
         if not self._canvas:
             self._canvas = item.get_canvas()
+        self.event = event
 
     def point_in_area(self, point, bounds):
         if not bounds.x1 <= point[0] <= bounds.x2:
@@ -218,7 +222,8 @@ class Selector(MouseInteraction):
         self.marquee.props.height = height
 
         # constrain selection to the day where the mouse was first clicked.
-        self.instance.select_area (self.mdown[0], y1, width, height)
+        self.instance.select_area (self.mdown[0], y1, width, height,
+            not (self.event.get_state () & gtk.gdk.SHIFT_MASK))
 
 class VelocityController(MouseInteraction):
 
@@ -320,10 +325,13 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
 
-    def point_to_datetime(self, x, y):
+    def point_to_datetime(self, x, y, snap=True):
         hour = ((y + (- self.y_scroll_offset)- self.hour_height) /
             self.hour_height)
-        minute = hour % 1 * 60
+        if snap:
+            minute = quantize(hour % 1 * 60, 15)
+        else:
+            minute = hour % 1 * 60
 
         date =  int(self.date + (x - self.day_width)
             / self.day_width)
@@ -542,10 +550,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 text = "%dh %dm" % (h, m)
                 self.centered_text(cr, text, x1, y1, self.day_width, height)
 
-    def select_area(self, x, y, width, height):
-        self.selected_start = self.point_to_datetime (x, y)
+    def select_area(self, x, y, width, height, quantize=True):
+        self.selected_start = self.point_to_datetime (x, y, quantize)
         # constrain selection to a single day
-        self.selected_end = self.point_to_datetime(x, y + height)
+        self.selected_end = self.point_to_datetime(x, y + height, quantize)
 
     def get_schedule(self, date):
         # test schedule
