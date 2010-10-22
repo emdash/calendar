@@ -459,7 +459,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             # vertical lines
 
             for start, duration, text in self.get_schedule(self.date + i):
-                y = self.y_scroll_offset + start * self.hour_height
+                y = self.y_scroll_offset + start * self.hour_height +\
+                    self.hour_height
                 height = duration * self.hour_height
 
                 cr.rectangle(x + 2, y, self.day_width - 4, height)
