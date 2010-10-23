@@ -487,8 +487,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 cr.fill_preserve()
                 cr.set_source_rgb(0, 0, 0)
 
-                self.centered_text(cr, text, x + 2, y, self.day_width - 4,
-                    height)
+                self.text_below(cr, text, x + 2, y + 2, self.day_width - 4)
                 self.events[evt] = (x, y, self.day_width, height)
             x += self.day_width
 
@@ -565,6 +564,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.selected_start = self.point_to_datetime (x, y, quantize)
         # constrain selection to a single day
         self.selected_end = self.point_to_datetime(x, y + height, quantize)
+        if self.selected_start == self.selected_end:
+            self.selected_start = None
+            self.selected_end = None
 
     def select_point(self, x, y):
         self.select_event(self.point_to_event(x, y))
