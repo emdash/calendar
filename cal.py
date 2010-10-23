@@ -445,8 +445,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
             # draw heading
             cr.set_source_rgba (0, 0, 0, 0.75)
-            self.centered_text(cr, date.strftime("%a %d"), x, y, self.day_width,
-                self.hour_height)
+            self.text_above(cr, date.strftime("%a"), x, y +
+                self.hour_height / 2 - 2, self.day_width)
+            self.text_below(cr, date.strftime("%x"), x, y +
+                self.hour_height / 2 + 2, self.day_width)
             x += self.day_width
 
             # draw vertical lines
@@ -504,10 +506,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 cr.fill()
                 cr.set_source_rgba(0, 0, 0, 0.75)
 
-                text = self.selected_start.strftime ("%H:%M:%S")
+                text = self.selected_start.strftime ("%X")
                 self.text_above(cr, text, x1, y1 - 2, self.day_width)
 
-                text = self.selected_end.strftime ("%H:%M:%S")
+                text = self.selected_end.strftime ("%X")
                 self.text_below(cr, text, x1, y1 + height + 2, self.day_width)
 
                 duration = self.selected_end - self.selected_start
@@ -558,7 +560,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.stroke()
 
         cr.set_source_rgb(0, 0, 0)
-        self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%D"),
+        self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
             0, 0, self.day_width, self.hour_height)
 
     def select_area(self, x, y, width, height, quantize=True):
