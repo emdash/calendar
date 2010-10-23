@@ -53,6 +53,7 @@ HOUR_HEIGHT = 50
 #TODO: port away from goocanvas ?
 #TODO: allow multiple selections
 #TODO: do something sane when events overlap
+#TODO: clamp values on selector to something sane
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
