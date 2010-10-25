@@ -46,7 +46,6 @@ HOUR_HEIGHT = 50
 #TODO: go to selected
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
-#TODO: resize canvas when window size changes
 #TODO: change cursors
 #TODO: start writing test cases, we've got too many features already
 #TODO: don't hard-code colors or drawing styles
