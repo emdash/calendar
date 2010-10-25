@@ -253,7 +253,7 @@ class VelocityController(MouseInteraction):
 
     def drag_end(self):
         self._velocity = self.delta[0] / self.instance.day_width
-        gobject.timeout_add(20, self._move)
+        gobject.timeout_add(30, self._move)
 
     def _move(self):
         self.instance.date -= self._velocity
