@@ -119,7 +119,8 @@ class MouseInteraction(Behavior):
             self._canvas = item.get_canvas()
         self.event = event
 
-    def point_in_area(self, point, bounds):
+    def point_in_area(self, point):
+        bounds = self.area
         if not bounds.x1 <= point[0] <= bounds.x2:
             return False
 
@@ -130,7 +131,7 @@ class MouseInteraction(Behavior):
 
     def on_button_press_event(self, item, target, event):
         if self.area:
-            if not self.point_in_area(self.abs, self.area):
+            if not self.point_in_area(self.abs):
                 return False
 
         self._common(item, target, event)
@@ -226,6 +227,11 @@ class Selector(MouseInteraction):
 class VelocityController(MouseInteraction):
 
     _velocity = 0
+
+    def point_in_area(self, point):
+        x, y = point
+        return (self.instance.x <= x <= self.instance.width and 
+            self.instance.y <= y <= HOUR_HEIGHT)
 
     def observe(self, instance):
         self.area = goocanvas.Bounds(instance.day_width, 0, instance.width,
