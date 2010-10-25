@@ -349,7 +349,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return ret + delta
 
     def datetime_to_point(self, dt):
-        if self.date < dt.toordinal() < self.date + (self.width /
+        if self.date - 1 < dt.toordinal() < self.date + (self.width /
             self.day_width):
             return (
                 ((dt.toordinal() - self.date + 1) * self.day_width),
