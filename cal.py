@@ -313,6 +313,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     width = gobject.property(type=int, default=WIDTH)
     height = gobject.property(type=int, default=HEIGHT)
     hour_height = gobject.property(type=int, default=HOUR_HEIGHT)
+    day_width = gobject.property(type=int, default=DAY_WIDTH)
     date = gobject.property(type=float,
         default=datetime.date.today().toordinal())
     y_scroll_offset = gobject.property(type=int, default=0)
@@ -322,7 +323,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
-        self.day_width = self.width / 8
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
         self.connect("notify", self.do_notify)
