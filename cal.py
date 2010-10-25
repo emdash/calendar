@@ -361,7 +361,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return None
 
     def do_notify(self, something, something_else):
-        self.day_width = self.width / 8
+        #self.day_width = self.width / 8
         self.changed(True)
 
     def do_simple_is_item_at(self, x, y, cr, pointer_event):
@@ -428,7 +428,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.height)
         cr.clip()
 
-        for i in xrange(0, 8):
+        for i in xrange(0, (self.width / self.day_width) + 1):
             date = self.get_date(day + i)
             weekday = date.weekday()
 
@@ -474,7 +474,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.stroke()
 
         cr.set_source_rgb(0, 0, 0)
-        for i in xrange (0, 8):
+        for i in xrange (0, (self.width / self.day_width) + 1):
             # vertical lines
 
             for start, duration, text, evt in self.get_schedule(self.date + i):
