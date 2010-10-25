@@ -586,10 +586,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             event)
                 for event in self.model.get_events(date)]
 
-
-adj = gtk.Adjustment()
-adj.props.upper = (HOUR_HEIGHT * 25) - HEIGHT
-
 class CalendarItem(goocanvas.Group):
 
     __gtype_name__ = "CalendarItem"
@@ -597,12 +593,6 @@ class CalendarItem(goocanvas.Group):
     def __init__(self, *args, **kwargs):
         goocanvas.Group.__init__(self, *args, **kwargs)
         self.schedule = CalendarBase(parent=self)
-
-        def update_scroll_pos(adjustment):
-            self.schedule.y_scroll_offset = -adj.get_value()
-
-        adj.connect("value-changed", update_scroll_pos)
-        adj.props.value = datetime.datetime.now().hour * HOUR_HEIGHT
         self.scrolling = VelocityController()
         self.scrolling.observe(self.schedule)
         self.selection = Selector()
@@ -758,9 +748,16 @@ class App(object):
         canvas.get_root_item().add_child(self.calendar_item)
         canvas.set_size_request(WIDTH, HEIGHT)
         canvas.show()
+        canvas.connect("size-allocate", self.size_allocate_cb)
         hbox.pack_start(canvas)
-        hbox.pack_start(gtk.VScrollbar(adj), False, False)
+        self.scrollbar = gtk.VScrollbar()
+        hbox.pack_start(self.scrollbar, False, False)
         vbox.pack_end(hbox)
+
+        self.scrollbar.connect("value-changed", self.update_scroll_pos)
+        self.update_scroll_adjustment(None)
+        self.scrollbar.set_value(datetime.datetime.now().hour *
+            self.schedule.hour_height)
 
         uiman = gtk.UIManager ()
         actiongroup = Command.create_action_group(self)
@@ -773,7 +770,23 @@ class App(object):
 
         w.add(vbox)
         w.show_all()
-        self.schedule.connect("notify", self.update_actions)
+        self.schedule.connect("notify::selected", self.update_actions)
+        self.schedule.connect("notify::selected_start", self.update_actions)
+        self.schedule.connect("notify::selected_end", self.update_actions)
+        self.schedule.connect("notify::height", self.update_scroll_adjustment)
+
+    def update_scroll_pos(self, scrollbar):
+        self.schedule.y_scroll_offset = -scrollbar.get_value()
+
+    def update_scroll_adjustment(self, *unused):
+        self.scrollbar.set_range(0, self.schedule.hour_height * 25 -
+            self.schedule.height)
+
+    def size_allocate_cb(self, canvas, allocation):
+        self.schedule.width = allocation.width
+        self.schedule.height = allocation.height
+        canvas.props.x2 = allocation.width
+        canvas.props.y2 = allocation.height
 
     def update_actions(self, *unused):
         Command.update_actions(self)
