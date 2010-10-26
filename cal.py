@@ -666,6 +666,14 @@ class CalendarItem(goocanvas.Group):
 
 class Command(object):
 
+    def do(self):
+        return False
+
+    def undo(self):
+        return False
+
+class MenuCommand(Command):
+
     label = ""
     stockid = None
     tooltip = None
@@ -676,12 +684,6 @@ class Command(object):
 
     def configure(self):
         pass
-
-    def do(self):
-        return False
-
-    def undo(self):
-        return False
 
     @classmethod
     def can_do(cls, app):
@@ -704,7 +706,7 @@ class Command(object):
         for sbcls in cls.__subclasses__():
             sbcls.action.set_sensitive(sbcls.can_do(app))
 
-class NewEvent(Command):
+class NewEvent(MenuCommand):
 
     label = _("New Event")
     tooltip = _("Add a new event")
@@ -730,7 +732,7 @@ class NewEvent(Command):
         self.app.model.del_event(self.event)
         return True
 
-class DelEvent(Command):
+class DelEvent(MenuCommand):
 
     label = _("Delete Event")
     tooltip = _("Delete selected events")
@@ -825,7 +827,7 @@ class App(object):
             self.schedule.hour_height)
 
         uiman = gtk.UIManager ()
-        actiongroup = Command.create_action_group(self)
+        actiongroup = MenuCommand.create_action_group(self)
         actiongroup.add_action(self.undo.undo_action)
         actiongroup.add_action(self.undo.redo_action)
         uiman.insert_action_group(actiongroup)
@@ -854,7 +856,7 @@ class App(object):
         canvas.props.y2 = allocation.height
 
     def update_actions(self, *unused):
-        Command.update_actions(self)
+        MenuCommand.update_actions(self)
 
     def run(self):
         gtk.main()
