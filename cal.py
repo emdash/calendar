@@ -60,12 +60,44 @@ def quantize(x, modulus):
 class Event(object):
 
     def __init__(self, start, end, description):
+        self._start = None
+        self._end = None
+        self.callback = None
+        self.args = None
+        self.date = None
         self.start = start
         self.end = end
         self.description = description
 
+    def set_date_changed_cb(self, callback, args):
+        self.callback = callback
+        self.args = args
+
+    def get_start(self):
+        return self._start
+
+    def set_start(self, value):
+        self._start = value
+        self._update_date()
+
+    def get_end(self):
+        return self._end
+
+    def set_end(self, value):
+        self._end = value
+        self._update_date()
+
+    start = property(get_start, set_start)
+    end = property(get_end, set_end)
+
+    def _update_date(self):
+        old = self.date
+        self.date = self.start.date()
+        if self.callback:
+            self.callback(self, old, *self.args)
+
     def get_date(self):
-        return self.start.date()
+        return self.date
 
     def get_duration(self):
         return self.end - self.start
@@ -196,17 +228,31 @@ class Selector(MouseInteraction):
 
     def __init__(self):
         self.selected = None
+        self.item = None
 
     def drag_start(self):
-        self.update_marquee()
+        self.item = self.instance.point_to_event(*self.abs)
+        if self.item:
+            self.start, self.end = self.item.start, self.item.end
+        else:
+            self.update_marquee()
 
     def move(self):
-        self.update_marquee()
+        if self.item != None:
+            self.update_item()
+        else:
+            self.update_marquee()
 
     def click(self):
         self.instance.selection_start = None
         self.instance.selected_end = None
         self.instance.select_point(*self.abs)
+
+    def update_item(self):
+        delta = self.instance.point_to_timedelta(*self.rel)
+        self.item.start = self.start + delta
+        self.item.end = self.end + delta
+        self.instance.changed(False)
 
     def update_marquee(self):
         self.instance.select_event(None)
@@ -273,6 +319,11 @@ class Schedule(object):
     def add_event(self, event):
         self.events.append(event)
         date = event.get_date().toordinal()
+        self._update_cache(event)
+        event.set_date_changed_cb(self._event_changed_cb, self.args)
+
+    def _update_cache(self, event):
+        date = event.get_date().toordinal()
         if not date in self.by_date:
             self.by_date[date] = []
         self.by_date[date].append(event)
@@ -302,6 +353,10 @@ class Schedule(object):
     def set_changed_cb(self, callback, *args):
         self.callback = callback
         self.args = args
+
+    def _event_changed_cb(self, event, old):
+        self.by_date[old.toordinal()].remove(event)
+        self._update_cache(event)
 
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
@@ -347,6 +402,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         ret = datetime.datetime.fromordinal(date)
         delta = datetime.timedelta(hours=int(hour), minutes=minute)
         return ret + delta
+
+    def point_to_timedelta(self, x, y, snap=True):
+        day = int(x / self.day_width)
+        minute = quantize(int((y / self.hour_height) * 60), 15)
+
+        return datetime.timedelta(minutes=minute)
 
     def datetime_to_point(self, dt):
         if self.date - 1 < dt.toordinal() < self.date + (self.width /
@@ -690,7 +751,6 @@ class DelEvent(Command):
     def undo(self):
         self.app.model.add_event(self.event)
         return True
-
 
 class UndoStack(object):
 
