@@ -34,7 +34,6 @@ HEIGHT = 400
 DAY_WIDTH = WIDTH / 8
 HOUR_HEIGHT = 50
 
-#TODO: moving events
 #TODO: edit the name of an event
 #TODO: change the duration of an event
 #TODO: repeating events
