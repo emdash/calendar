@@ -247,6 +247,17 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.show_text(text)
         cr.restore()
 
+    def selection_handles(self, cr, x, y, width, height):
+        cr.save()
+        cr.set_source_rgba(0, 0, 0, 1)
+        x1, y1, x2, y2 = x, y, x + width, y + height
+        cr.rectangle(x1 - 4, y1 - 4, 8, 8)
+        cr.rectangle(x2 - 4, y1 - 4, 8, 8)
+        cr.rectangle(x1 - 4, y2 - 4, 8, 8)
+        cr.rectangle(x2 - 4, y2 - 4, 8, 8)
+        cr.fill()
+        cr.restore()
+
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
         self.events = {}
@@ -318,15 +329,16 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 height = duration * self.hour_height
 
                 cr.rectangle(x + 2, y, self.day_width - 4, height)
-                if evt == self.selected:
-                    cr.set_source_rgba(0.25, 0.25, 0.25)
-                else:
-                    cr.set_source_rgba(0.55, 0.55, 0.55)
-                cr.fill_preserve()
+                cr.set_source_rgba(0.55, 0.55, 0.55)
+                cr.fill()
                 cr.set_source_rgb(0, 0, 0)
 
                 self.text_below(cr, text, x + 2, y + 2, self.day_width - 4)
                 self.events[evt] = (x, y, self.day_width, height)
+
+                if evt == self.selected:
+                    self.selection_handles (cr, x, y, self.day_width, height)
+
             x += self.day_width
 
         if self.selected_start and self.selected_end:
