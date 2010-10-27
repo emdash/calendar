@@ -85,7 +85,9 @@ class Selector(MouseInteraction):
         self.undo.commit(self.command)
 
     def click(self):
-        self.undo.commit(SelectPoint(self.instance, *self.abs))
+        cmd = SelectPoint(self.instance, *self.abs)
+        cmd.do()
+        self.undo.commit(cmd)
 
 class VelocityController(MouseInteraction):
 
@@ -630,6 +632,7 @@ class App(object):
     def do_command(self, unused_action, command):
         cmd = command(self)
         cmd.configure()
-        self.undo.commit(cmd)
+        if cmd.do():
+            self.undo.commit(cmd)
 
 App().run()

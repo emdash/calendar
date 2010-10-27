@@ -56,11 +56,10 @@ class UndoStack(object):
 
     def commit(self, action):
         # an action will return True if it can be undone
-        if action.do():
-            self.undo_stack.append(action)
-            self.redo_stack = []
-            self.redo_action.set_sensitive(False)
-            self.undo_action.set_sensitive(True)
+        self.undo_stack.append(action)
+        self.redo_stack = []
+        self.redo_action.set_sensitive(False)
+        self.undo_action.set_sensitive(True)
 
     def undo(self, unused_action):
         action = self.undo_stack.pop()
