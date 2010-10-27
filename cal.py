@@ -62,9 +62,10 @@ def quantize(x, modulus):
 
 class Selector(MouseInteraction):
 
-    def __init__(self):
+    def __init__(self, undo):
         self.selected = None
         self.item = None
+        self.undo = undo
 
     def drag_start(self):
         self.item = self.instance.point_to_event(*self.abs)
@@ -441,12 +442,12 @@ class CalendarItem(goocanvas.Group):
 
     __gtype_name__ = "CalendarItem"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, undo, *args, **kwargs):
         goocanvas.Group.__init__(self, *args, **kwargs)
         self.schedule = CalendarBase(parent=self)
         self.scrolling = VelocityController()
         self.scrolling.observe(self.schedule)
-        self.selection = Selector()
+        self.selection = Selector(undo)
         self.selection.observe(self.schedule)
 
 class NewEvent(MenuCommand):
@@ -518,7 +519,7 @@ class App(object):
         vbox = gtk.VBox()
         hbox = gtk.HBox()
         canvas = goocanvas.Canvas()
-        self.calendar_item = CalendarItem()
+        self.calendar_item = CalendarItem(self.undo)
         self.schedule = self.calendar_item.schedule
         self.model = self.schedule.model
         canvas.get_root_item().add_child(self.calendar_item)
