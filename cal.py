@@ -26,7 +26,7 @@ import datetime
 import math
 from gettext import gettext as _
 from schedule import Schedule, Event
-from command import UndoStack, MenuCommand
+from command import UndoStack, MenuCommand, Command
 from behavior import MouseInteraction
 
 WIDTH = 600
@@ -70,41 +70,23 @@ class Selector(MouseInteraction):
     def drag_start(self):
         self.item = self.instance.point_to_event(*self.abs)
         if self.item:
-            self.start, self.end = self.item.start, self.item.end
+            self.command = MoveEvent(self.instance, self.item)
         else:
-            self.update_marquee()
+            self.command = SelectArea(self.instance, *self.mdown)
 
     def move(self):
-        if self.item != None:
-            self.update_item()
+        shift = not self.event.get_state() & gtk.gdk.SHIFT_MASK
+        if self.item:
+            x, y = self.rel
         else:
-            self.update_marquee()
+            x, y = self.abs
+        self.command.update(x, y, shift)
+
+    def drag_end(self):
+        self.undo.commit(self.command)
 
     def click(self):
-        self.instance.selection_start = None
-        self.instance.selected_end = None
-        self.instance.select_point(*self.abs)
-
-    def update_item(self):
-        delta = self.instance.point_to_timedelta(*self.rel)
-        self.item.start = self.start + delta
-        self.item.end = self.end + delta
-        self.instance.changed(False)
-
-    def update_marquee(self):
-        self.instance.select_event(None)
-
-        # normalize to x, y, width, height with positive values
-        x1 = min(self.mdown[0], self.abs[0])
-        y1 = min(self.mdown[1], self.abs[1])
-        x2 = max(self.mdown[0], self.abs[0])
-        y2 = max(self.mdown[1], self.abs[1])
-        width = x2 - x1
-        height = y2 - y1
-
-        # constrain selection to the day where the mouse was first clicked.
-        self.instance.select_area (self.mdown[0], y1, width, height,
-            not (self.event.get_state () & gtk.gdk.SHIFT_MASK))
+        self.undo.commit(SelectPoint(self.instance, *self.abs))
 
 class VelocityController(MouseInteraction):
 
@@ -437,6 +419,81 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             event.description,
             event)
                 for event in self.model.get_events(date)]
+
+class SelectPoint(Command):
+
+    def __init__(self, instance, x, y):
+        self.instance = instance
+        self.point = x, y
+        self.selected = self.instance.selected
+        self.selected_start = self.instance.selected_end
+        self.selected_end = self.instance.selected_end
+
+    def do(self):
+        self.instance.select_point(*self.point)
+
+    def undo(self):
+        self.instance.selected = self.selected
+        self.instance.selected_start = self.selected_start
+        self.instance.selected_end = self.selected_end
+
+class SelectArea(Command):
+
+    def __init__(self, instance, x, y):
+        self.instance = instance
+        self.mdown = x, y
+        self.selected = self.instance.selected
+        self.selected_start = self.instance.selected_start
+        self.selected_end = self.instance.selected_end
+
+    def update(self, x, y, quantize=True):
+        self.abs = x, y
+        self.quantize = quantize
+        self.do()
+
+    def do(self):
+        self.instance.select_event(None)
+
+        # normalize to x, y, width, height with positive values
+        x1 = min(self.mdown[0], self.abs[0])
+        y1 = min(self.mdown[1], self.abs[1])
+        x2 = max(self.mdown[0], self.abs[0])
+        y2 = max(self.mdown[1], self.abs[1])
+        width = x2 - x1
+        height = y2 - y1
+
+        # constrain selection to the day where the mouse was first clicked.
+        self.instance.select_area (self.mdown[0], y1, width, height,
+            self.quantize)
+        return True
+
+    def undo(self):
+        self.instance.selected = self.selected
+        self.instance.selected_start = self.selected_start
+        self.instance.selected_end = self.selected_end
+
+class MoveEvent(Command):
+
+    def __init__(self, instance, event, x=None, y=None):
+        self.instance = instance
+        self.mdown = x,y
+        self.start, self.end = event.start, event.end
+        self.event = event
+
+    def update(self, x, y, quantize = False):
+        self.quantize = quantize
+        self.rel = (x, y)
+        self.do()
+
+    def undo(self):
+        self.event.start, self.event.end = self.start, self.end
+
+    def do(self):
+        x, y = self.rel
+        delta = self.instance.point_to_timedelta(x, y, self.quantize)
+        self.event.start = self.start + delta
+        self.event.end = self.end + delta
+        return True
 
 class CalendarItem(goocanvas.Group):
 
