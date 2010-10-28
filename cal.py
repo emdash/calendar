@@ -54,6 +54,7 @@ HOUR_HEIGHT = 50
 #TODO: allow multiple selections
 #TODO: do something sane when events overlap
 #TODO: clamp values on selector to something sane
+#TODO: move events between days
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
