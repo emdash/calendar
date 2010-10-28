@@ -26,7 +26,7 @@ import datetime
 import math
 from gettext import gettext as _
 from schedule import Schedule, Event
-from command import UndoStack, MenuCommand, Command
+from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
 
 WIDTH = 600
@@ -65,24 +65,28 @@ class Selector(MouseInteraction):
         self.selected = None
         self.item = None
         self.undo = undo
+        self.mode = None
+        self.command = None
+        self.commands = (MoveEvent, SelectArea)
 
     def drag_start(self):
+        for command in self.commands:
+            self.command = command.create_for_point(self.instance, self.abs)
+            if self.command:
+                break
+
+        handle = self.instance.point_in_handle(*self.abs)
         self.item = self.instance.point_to_event(*self.abs)
-        if self.item:
-            self.command = MoveEvent(self.instance, self.item)
-        else:
-            self.command = SelectArea(self.instance, *self.mdown)
 
     def move(self):
-        shift = not self.event.get_state() & gtk.gdk.SHIFT_MASK
-        if self.item:
-            x, y = self.rel
-        else:
-            x, y = self.abs
-        self.command.update(x, y, shift)
+        if self.command:
+            shift = not self.event.get_state() & gtk.gdk.SHIFT_MASK
+            self.command.update(self.abs, self.rel, shift)
 
     def drag_end(self):
-        self.undo.commit(self.command)
+        if self.command:
+            self.undo.commit(self.command)
+        self.command = None
 
     def click(self):
         cmd = SelectPoint(self.instance, *self.abs)
@@ -444,25 +448,27 @@ class SelectPoint(Command):
 
     def do(self):
         self.instance.select_point(*self.point)
+        self.instance.selected_start = None
+        self.instance.selected_end = None
+        return True
 
     def undo(self):
         self.instance.selected = self.selected
         self.instance.selected_start = self.selected_start
         self.instance.selected_end = self.selected_end
 
-class SelectArea(Command):
+class SelectArea(MouseCommand):
 
-    def __init__(self, instance, x, y):
+    @classmethod
+    def can_do(cls, instance, abs):
+        return True
+
+    def __init__(self, instance, abs):
         self.instance = instance
-        self.mdown = x, y
+        self.mdown = abs
         self.selected = self.instance.selected
         self.selected_start = self.instance.selected_start
         self.selected_end = self.instance.selected_end
-
-    def update(self, x, y, quantize=True):
-        self.abs = x, y
-        self.quantize = quantize
-        self.do()
 
     def do(self):
         self.instance.select_event(None)
@@ -477,7 +483,7 @@ class SelectArea(Command):
 
         # constrain selection to the day where the mouse was first clicked.
         self.instance.select_area (self.mdown[0], y1, width, height,
-            self.quantize)
+            self.shift)
         return True
 
     def undo(self):
@@ -485,18 +491,26 @@ class SelectArea(Command):
         self.instance.selected_start = self.selected_start
         self.instance.selected_end = self.selected_end
 
-class MoveEvent(Command):
+class MoveEvent(MouseCommand):
 
-    def __init__(self, instance, event, x=None, y=None):
+    @classmethod
+    def create_for_point(cls, instance, abs):
+        event = instance.point_to_event(*abs)
+        if event:
+            return MoveEvent(instance, event, abs)
+
+    def __init__(self, instance, event, abs):
         self.instance = instance
-        self.mdown = x,y
+        self.mdown = abs
         self.start, self.end = event.start, event.end
         self.event = event
 
-    def update(self, x, y, quantize = False):
-        self.quantize = quantize
-        self.rel = (x, y)
-        self.do()
+    def do(self):
+        x, y = self.rel
+        delta = self.instance.point_to_timedelta(x, y, self.shift)
+        self.event.end = self.end + delta
+        self.event.start = self.start + delta
+        return True
 
     def undo(self):
         self.event.start, self.event.end = self.start, self.end

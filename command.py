@@ -8,6 +8,32 @@ class Command(object):
     def undo(self):
         return False
 
+class MouseCommand(Command):
+
+    abs = None
+    rel = None
+    shift = None
+    control = None
+
+    @classmethod
+    def create_for_point(cls, instance, abs):
+        if cls.can_do(instance, abs):
+            return cls(instance, abs)
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return False
+
+    def __init__(self, intance, abs):
+        raise NotImplemented
+
+    def update(self, abs, rel, shift=False, control=False):
+        self.abs = abs
+        self.rel = rel
+        self.shift = shift
+        self.control = control
+        self.do()
+
 class MenuCommand(Command):
 
     label = ""
