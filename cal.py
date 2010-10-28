@@ -35,7 +35,6 @@ DAY_WIDTH = WIDTH / 8
 HOUR_HEIGHT = 50
 
 #TODO: edit the name of an event
-#TODO: change the duration of an event
 #TODO: repeating events
 #TODO: event alarms
 #TODO: save to file
@@ -67,7 +66,7 @@ class Selector(MouseInteraction):
         self.undo = undo
         self.mode = None
         self.command = None
-        self.commands = (MoveEvent, SelectArea)
+        self.commands = (SetEventStart, SetEventEnd, MoveEvent, SelectArea)
 
     def drag_start(self):
         for command in self.commands:
@@ -147,6 +146,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     selected_start = gobject.property(type=gobject.TYPE_PYOBJECT)
     selected_end = gobject.property(type=gobject.TYPE_PYOBJECT)
     selected = gobject.property(type=gobject.TYPE_PYOBJECT)
+    handle_locations = None
 
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
@@ -261,6 +261,19 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.rectangle(x2 - 4, y2 - 4, 8, 8)
         cr.fill()
         cr.restore()
+        self.handle_locations = (x1, y1, x2, y2)
+
+    def point_in_handle (self, x, y):
+        if not self.handle_locations:
+            return 0
+
+        x1, y1, x2, y2 = self.handle_locations
+
+        if (x1 - 4 <= x <= x2 + 4) and (y1 - 4 <= y <= y1 + 4):
+            return 1
+        if (x1 - 4 <= x <= x2 + 4) and (y2 - 4 <= y <= y2 + 4):
+            return 2
+        return 0
 
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
@@ -515,12 +528,47 @@ class MoveEvent(MouseCommand):
     def undo(self):
         self.event.start, self.event.end = self.start, self.end
 
+class SetEventStart(MouseCommand):
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return instance.point_in_handle(*abs) == 1
+
+    def __init__(self, instance, abs):
+        self.mdown = abs
+        self.instance = instance
+        self.event = instance.selected
+        self.pos = self.event.start
+
     def do(self):
-        x, y = self.rel
-        delta = self.instance.point_to_timedelta(x, y, self.quantize)
-        self.event.start = self.start + delta
-        self.event.end = self.end + delta
+        self.event.start = min(
+            self.instance.point_to_datetime(self.mdown[0], self.abs[1]),
+            self.event.end)
         return True
+
+    def undo(self):
+        self.event.start = self.pos
+
+class SetEventEnd(MouseCommand):
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return instance.point_in_handle(*abs) == 2
+
+    def __init__(self, instance, abs):
+        self.mdown = abs
+        self.instance = instance
+        self.event = instance.selected
+        self.pos = self.event.end
+
+    def do(self):
+        self.event.end = max(
+            self.instance.point_to_datetime(self.mdown[0], self.abs[1]),
+            self.event.start)
+        return True
+
+    def undo(self):
+        self.event.end = self.pos
 
 class CalendarItem(goocanvas.Group):
 
