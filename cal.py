@@ -672,6 +672,8 @@ class App(object):
         actiongroup = MenuCommand.create_action_group(self)
         actiongroup.add_action(self.undo.undo_action)
         actiongroup.add_action(self.undo.redo_action)
+        self.undo.undo_action.connect("activate", self.update_actions)
+        self.undo.redo_action.connect("activate", self.update_actions)
         uiman.insert_action_group(actiongroup)
         uiman.add_ui_from_string(self.ui)
         toolbar = uiman.get_widget("/mainToolBar")
