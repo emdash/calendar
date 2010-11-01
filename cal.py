@@ -571,7 +571,8 @@ class SetEventStart(MouseCommand):
 
     def do(self):
         self.event.start = min(
-            self.instance.point_to_datetime(self.mdown[0], self.abs[1]),
+            self.instance.point_to_datetime(self.mdown[0], self.abs[1],
+                self.shift),
             self.event.end)
         return True
 
@@ -592,7 +593,8 @@ class SetEventEnd(MouseCommand):
 
     def do(self):
         self.event.end = max(
-            self.instance.point_to_datetime(self.mdown[0], self.abs[1]),
+            self.instance.point_to_datetime(self.mdown[0], self.abs[1],
+                self.shift),
             self.event.start)
         return True
 
