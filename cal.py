@@ -253,14 +253,42 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
 
     def selection_handles(self, cr, x, y, width, height):
+        radius = 10
         cr.save()
-        cr.set_source_rgba(0, 0, 0, 1)
-        x1, y1, x2, y2 = x, y, x + width, y + height
-        cr.rectangle(x1 - 4, y1 - 4, 8, 8)
-        cr.rectangle(x2 - 4, y1 - 4, 8, 8)
-        cr.rectangle(x1 - 4, y2 - 4, 8, 8)
-        cr.rectangle(x2 - 4, y2 - 4, 8, 8)
+        cr.set_source_rgba(0.0, 0.0, 0.0, 0.55)
+        x1, y1 = (x + 2, y - 2)
+        x2, y2 = (x + width - 2, y + height + 2)
+
+        cr.move_to(x1, y1)
+        cr.new_sub_path()
+        cr.arc(x1 + radius, y1, radius, math.pi, 1.5 * math.pi)
+        cr.line_to(x2 - radius, y1 - radius)
+        cr.new_sub_path()
+        cr.arc(x2 - radius, y1, radius, 1.5 * math.pi, 0)
+        cr.line_to(x1, y1)
+
+        cr.move_to(x2, y2)
+        cr.new_sub_path()
+        cr.arc(x2 - radius, y2, radius, 0, 0.5 * math.pi)
+        cr.line_to(x1 + radius, y2 + radius)
+        cr.new_sub_path()
+        cr.arc(x1 + radius, y2, radius, 0.5 * math.pi, math.pi)
+        cr.line_to(x2, y2)
         cr.fill()
+
+        cr.set_source_rgb(1, 1, 1)
+
+        cr.move_to (x1 + width / 2, y1 - radius + 1)
+        cr.rel_line_to (-3, radius - 2)
+        cr.rel_line_to (6, 0)
+        cr.move_to (x1 + width / 2, y1 - radius + 1)
+
+        cr.move_to (x1 + width / 2, y2 + radius - 1)
+        cr.rel_line_to (-3, -radius + 2)
+        cr.rel_line_to (6, 0)
+        cr.move_to (x1 + width / 2, y2 + radius - 1)
+        cr.fill()
+
         cr.restore()
         self.handle_locations = (x1, y1, x2, y2)
 
@@ -270,9 +298,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         x1, y1, x2, y2 = self.handle_locations
 
-        if (x1 - 4 <= x <= x2 + 4) and (y1 - 4 <= y <= y1 + 4):
+        if (x1 + 2 <= x <= x2 + 2) and (y1 - 10 <= y <= y1 + 4):
             return 1
-        if (x1 - 4 <= x <= x2 + 4) and (y2 - 4 <= y <= y2 + 4):
+        if (x1 + 2 <= x <= x2 + 4) and (y2 - 4 <= y <= y2 + 10):
             return 2
         return 0
 
