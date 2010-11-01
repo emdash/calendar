@@ -91,9 +91,10 @@ class Schedule(object):
     def set_changed_cb(self, callback, *args):
         self.callback = callback
         self.args = args
+        for event in self.events:
+            event.set_date_changed_cb(self._event_changed_cb, self.args)
 
     def _event_changed_cb(self, event, old):
         self.by_date[old.toordinal()].remove(event)
         self._update_cache(event)
-
 
