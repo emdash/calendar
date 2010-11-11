@@ -54,7 +54,6 @@ import shapes
 #TODO: allow multiple selections
 #TODO: do something sane when events overlap
 #TODO: clamp values on selector to something sane
-#TODO: move events between days
 #TODO: specify working day (hide unused hours)
 
 def quantize(x, modulus):
