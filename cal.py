@@ -181,7 +181,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def point_to_timedelta(self, x, y, snap=True):
         day = int(x / self.day_width)
-        minute = quantize(int((y / self.hour_height) * 60), 15)
+        minute = (day * 24 * 60) + quantize(int((y / self.hour_height) * 60), 15)
 
         return datetime.timedelta(minutes=minute)
 
@@ -550,6 +550,7 @@ class MoveEvent(MouseCommand):
         delta = self.instance.point_to_timedelta(x, y, self.shift)
         self.event.end = self.end + delta
         self.event.start = self.start + delta
+        print self.event.start, delta
         return True
 
     def undo(self):
