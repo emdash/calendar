@@ -544,13 +544,13 @@ class MoveEvent(MouseCommand):
         self.mdown = abs
         self.start, self.end = event.start, event.end
         self.event = event
+        self.offset = instance.day_width / 2
 
     def do(self):
         x, y = self.rel
-        delta = self.instance.point_to_timedelta(x, y, self.shift)
+        delta = self.instance.point_to_timedelta(int(x + self.offset), y, self.shift)
         self.event.end = self.end + delta
         self.event.start = self.start + delta
-        print self.event.start, delta
         return True
 
     def undo(self):
