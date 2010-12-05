@@ -400,9 +400,13 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 self.events[evt] = (x, y, self.day_width, height)
 
                 if evt == self.selected:
-                    self.selection_handles (cr, x, y, self.day_width, height)
+                    selected_x, selected_y, selected_height = x, y, height
 
             x += self.day_width
+
+        if self.selected:
+            self.selection_handles (cr, selected_x, selected_y,
+                self.day_width, selected_height)
 
         if self.selected_start and self.selected_end:
             start = self.datetime_to_point(self.selected_start)
