@@ -258,7 +258,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.show_text(text)
         cr.restore()
 
-    def selection_handles(self, cr, x, y, width, height):
+    def selection_handles(self, cr):
+        if (not self.selected) or (not self.selected in self.events):
+            return
+
+        (x, y, width, height) = self.events[self.selected]
         radius = 10
         cr.save()
         cr.set_source_rgba(0.0, 0.0, 0.0, 0.55)
@@ -365,20 +369,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         y = self.y_scroll_offset
         x = self.day_width - (self.date * self.day_width % self.day_width)
-
         cr.restore()
-        
-    def do_simple_paint(self, cr, bounds):
-        cr.identity_matrix()
-        self.events = {}
-        x = self.day_width - (self.date * self.day_width % self.day_width)
-        y = self.x
-        day = int (self.date)
 
-        self.clear_background(cr)
-        self.draw_day_headers(cr, x, y, day)
-        self.draw_grid(cr, x, y)
-
+    def draw_events(self, cr, x, y):
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
             for start, duration, text, evt in self.get_schedule(self.date + i):
@@ -405,15 +398,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
                 self.events[evt] = (x, y, self.day_width, height)
 
-                if evt == self.selected:
-                    selected_x, selected_y, selected_height = x, y, height
-
             x += self.day_width
+        cr.restore()
 
-        if self.selected:
-            self.selection_handles (cr, selected_x, selected_y,
-                self.day_width, selected_height)
-
+    def draw_marquee(self, cr):
         if self.selected_start and self.selected_end:
             start = self.datetime_to_point(self.selected_start)
             end = self.datetime_to_point(self.selected_end)
@@ -439,7 +427,19 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 text = "%dh %dm" % (h, m)
                 self.centered_text(cr, text, x1, y1, self.day_width, height)
 
-        cr.restore()
+    def do_simple_paint(self, cr, bounds):
+        cr.identity_matrix()
+        self.events = {}
+        x = self.day_width - (self.date * self.day_width % self.day_width)
+        y = self.x
+        day = int (self.date)
+
+        self.clear_background(cr)
+        self.draw_day_headers(cr, x, y, day)
+        self.draw_grid(cr, x, y)
+        self.draw_events(cr, x, y)
+        self.draw_marquee(cr)
+        self.selection_handles (cr)
 
         cr.save()
         cr.rectangle(0, self.hour_height, self.day_width, self.height -
