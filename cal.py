@@ -327,6 +327,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
             cr.stroke()
 
+        for i in xrange(0, (self.width / self.day_width) + 1):
+            # draw vertical lines
+            x += self.day_width
+            cr.move_to (x, self.hour_height)
+            cr.line_to (x, self.height)
+            cr.stroke()
 
     def draw_day_headers(self, cr, x, y, day):
         cr.save()
@@ -356,12 +362,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.text_below(cr, date.strftime("%x"), x, y +
                 self.hour_height / 2 + 2, self.day_width)
             x += self.day_width
-
-            # draw vertical lines
-            cr.set_source_rgba(1, 1, 1)
-            cr.move_to (x, self.hour_height)
-            cr.line_to (x, self.height)
-            cr.stroke()
 
         y = self.y_scroll_offset
         x = self.day_width - (self.date * self.day_width % self.day_width)
