@@ -310,17 +310,25 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             return 2
         return 0
 
-    def do_simple_paint(self, cr, bounds):
-        cr.identity_matrix()
-        self.events = {}
-        x = self.day_width - (self.date * self.day_width % self.day_width)
-        y = self.x
-        day = int (self.date)
-
+    def clear_background(self, cr):
         cr.rectangle(self.x, self.y, self.width, self.height)
         cr.set_source_rgb(0.8, 0.8, 0.8)
         cr.fill()
 
+    def draw_grid(self, cr, x, y):
+        cr.save()
+        cr.rectangle(self.day_width, self.hour_height, 
+            self.width - self.day_width, self.height - self.hour_height)
+        cr.clip()
+
+        cr.set_source_rgb(1, 1, 1)
+        for i in xrange(1, 25):
+            cr.move_to(self.day_width, self.y_scroll_offset + i * self.hour_height)
+            cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
+            cr.stroke()
+
+
+    def draw_day_headers(self, cr, x, y, day):
         cr.save()
         cr.rectangle(self.day_width, y, self.width - self.day_width,
             self.height)
@@ -359,22 +367,20 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         x = self.day_width - (self.date * self.day_width % self.day_width)
 
         cr.restore()
-        cr.save()
+        
+    def do_simple_paint(self, cr, bounds):
+        cr.identity_matrix()
+        self.events = {}
+        x = self.day_width - (self.date * self.day_width % self.day_width)
+        y = self.x
+        day = int (self.date)
 
-        cr.rectangle(self.day_width, self.hour_height, 
-            self.width - self.day_width, self.height - self.hour_height)
-        cr.clip()
-
-        cr.set_source_rgb(1, 1, 1)
-        for i in xrange(1, 25):
-            cr.move_to(self.day_width, self.y_scroll_offset + i * self.hour_height)
-            cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
-            cr.stroke()
+        self.clear_background(cr)
+        self.draw_day_headers(cr, x, y, day)
+        self.draw_grid(cr, x, y)
 
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
-            # vertical lines
-
             for start, duration, text, evt in self.get_schedule(self.date + i):
                 y = self.y_scroll_offset + start * self.hour_height +\
                     self.hour_height
