@@ -451,6 +451,27 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 text = "%dh %dm" % (h, m)
                 self.centered_text(cr, text, x1, y1, self.day_width, height)
 
+    def draw_top_left_corner(self, cr):
+        cr.set_source_rgba(0.75, 0.75, 0.75)
+        cr.rectangle (self.x, self.y, self.day_width, self.hour_height)
+        cr.fill_preserve()
+        cr.set_source_rgb(1, 1, 1)
+        cr.stroke()
+        
+        cr.set_source_rgb(0, 0, 0)
+        self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
+            0, 0, self.day_width, self.hour_height)
+
+    def draw_comfort_lines(self, cr):
+        cr.set_source_rgba(0.55, 0.55, 0.55)
+        cr.move_to(self.x, self.hour_height)
+        cr.line_to(self.width, self.hour_height)
+        cr.stroke()
+
+        cr.move_to(self.day_width, self.y)
+        cr.line_to(self.day_width, self.height)
+        cr.stroke()
+
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
         self.events = {}
@@ -465,25 +486,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.draw_events(cr, x, y)
         self.draw_marquee(cr)
         self.selection_handles (cr)
-
-        cr.set_source_rgba(0.75, 0.75, 0.75)
-        cr.rectangle (self.x, self.y, self.day_width, self.hour_height)
-        cr.fill_preserve()
-        cr.set_source_rgb(1, 1, 1)
-        cr.stroke()
-
-        cr.set_source_rgba(0.55, 0.55, 0.55)
-        cr.move_to(self.x, self.hour_height)
-        cr.line_to(self.width, self.hour_height)
-        cr.stroke()
-
-        cr.move_to(self.day_width, self.y)
-        cr.line_to(self.day_width, self.height)
-        cr.stroke()
-
-        cr.set_source_rgb(0, 0, 0)
-        self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
-            0, 0, self.day_width, self.hour_height)
+        self.draw_top_left_corner (cr)
+        self.draw_comfort_lines(cr)
 
     def select_area(self, x, y, width, height, quantize=True):
         self.selected_start = self.point_to_datetime (x, y, quantize)
