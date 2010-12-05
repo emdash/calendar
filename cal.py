@@ -745,4 +745,5 @@ class App(object):
         if cmd.do():
             self.undo.commit(cmd)
 
-App().run()
+if __name__ == "__main__":
+    App().run()
