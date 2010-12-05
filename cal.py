@@ -371,6 +371,30 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         x = self.day_width - (self.date * self.day_width % self.day_width)
         cr.restore()
 
+    def draw_hour_headers(self, cr, y):
+        cr.save()
+        cr.rectangle(0, self.hour_height, self.day_width, self.height -
+            self.hour_height)
+        cr.clip()
+
+        for i in range(0, 24):
+            y = (i + 1) * self.hour_height + self.y_scroll_offset
+            cr.rectangle(0, y, self.day_width, self.hour_height)
+            cr.set_source_rgb (0.75, 0.75, 0.75)
+            cr.fill_preserve()
+            cr.set_source_rgb (1, 1, 1)
+            cr.stroke()
+
+            # draw heading
+            cr.set_source_rgba(0, 0, 0, .75)
+            text = "%2d:00" % i
+            tw, th = cr.text_extents(text)[2:4]
+            cr.move_to ((self.day_width / 2) - tw / 2,
+                y + (self.hour_height / 2) - th / 2)
+            cr.show_text(text)
+
+        cr.restore()
+
     def draw_events(self, cr, x, y):
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
@@ -436,33 +460,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         self.clear_background(cr)
         self.draw_day_headers(cr, x, y, day)
+        self.draw_hour_headers(cr, y)
         self.draw_grid(cr, x, y)
         self.draw_events(cr, x, y)
         self.draw_marquee(cr)
         self.selection_handles (cr)
-
-        cr.save()
-        cr.rectangle(0, self.hour_height, self.day_width, self.height -
-            self.hour_height)
-        cr.clip()
-
-        for i in range(0, 24):
-            y = (i + 1) * self.hour_height + self.y_scroll_offset
-            cr.rectangle(0, y, self.day_width, self.hour_height)
-            cr.set_source_rgb (0.75, 0.75, 0.75)
-            cr.fill_preserve()
-            cr.set_source_rgb (1, 1, 1)
-            cr.stroke()
-
-            # draw heading
-            cr.set_source_rgba(0, 0, 0, .75)
-            text = "%2d:00" % i
-            tw, th = cr.text_extents(text)[2:4]
-            cr.move_to ((self.day_width / 2) - tw / 2,
-                y + (self.hour_height / 2) - th / 2)
-            cr.show_text(text)
-
-        cr.restore()
 
         cr.set_source_rgba(0.75, 0.75, 0.75)
         cr.rectangle (self.x, self.y, self.day_width, self.hour_height)
