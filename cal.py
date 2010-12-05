@@ -42,10 +42,11 @@ HOUR_HEIGHT = 50
 #TODO: sync with google calendar
 #TODO: sync with facebook calendar
 #TODO: sync with evolution ??
-#TODO: status bar
+#TODO: message area (gtk-info bar?)
 #TODO: go to today
-#TODO: go to next week, previous week
+#TODO: go to next {week, month}
 #TODO: go to selected
+#TODO: forward, back buttons
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
 #TODO: change cursors
@@ -56,6 +57,7 @@ HOUR_HEIGHT = 50
 #TODO: do something sane when events overlap
 #TODO: clamp values on selector to something sane
 #TODO: move events between days
+#TODO: specify working day (hide unused hours)
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
