@@ -21,6 +21,8 @@
 # Boston, MA 02111-1307, USA.
 
 import gtk
+import pango
+import pangocairo
 import goocanvas
 import gobject
 import datetime
@@ -159,6 +161,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.connect("notify", self.do_notify)
         self.events = {}
         self.selected = None
+        self.font_desc = pango.FontDescription("Sans 8")
 
     def model_changed(self):
         self.changed(False)
@@ -379,10 +382,21 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
                 cr.rectangle(x + 2, y, self.day_width - 4, height)
                 cr.set_source_rgba(0.55, 0.55, 0.55)
-                cr.fill()
-                cr.set_source_rgb(0, 0, 0)
+                cr.fill_preserve()
 
-                self.text_below(cr, text, x + 2, y + 2, self.day_width - 4)
+                cr.save()
+                cr.clip()
+                cr.set_source_rgb(0, 0, 0)
+                
+                pcr = pangocairo.CairoContext(cr)
+                lyt = pcr.create_layout()
+                lyt.set_font_description(self.font_desc)
+                lyt.set_text(text)
+                lyt.set_width(pango.PIXELS(self.day_width - 4 + 100))
+                cr.move_to(x + 2, y)
+                pcr.show_layout(lyt)
+                cr.restore()
+
                 self.events[evt] = (x, y, self.day_width, height)
 
                 if evt == self.selected:
