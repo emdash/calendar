@@ -1,6 +1,7 @@
-# PiTiVi , Non-linear video editor
+#!/usr/bin/python cal.py
+# Calendar, Graphical calendar applet with novel interface
 #
-#       pitivi/ui/controller.py
+#       cal.py
 #
 # Copyright (c) 2010, Brandon Lewis <brandon_lewis@berkeley.edu>
 #
