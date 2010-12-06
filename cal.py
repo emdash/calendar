@@ -258,6 +258,18 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.show_text(text)
         cr.restore()
 
+    def draw_heading(self, cr, x, y, text, colors):
+        cr.rectangle(x, y, self.day_width, self.hour_height)
+        cr.set_source_rgb (*colors)
+
+        cr.fill_preserve()
+        cr.set_source_rgb (1, 1, 1)
+        cr.stroke()
+
+        # TODO: replace this with global text color?
+        cr.set_source_rgba(0, 0, 0, .75)
+        self.centered_text(cr, text, x, y, self.day_width, self.hour_height)
+                         
     def selection_handles(self, cr):
         if (not self.selected) or (not self.selected in self.events):
             return
@@ -351,16 +363,13 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.rectangle (x, y, self.day_width, self.hour_height)
 
             if weekday > 4:
-                cr.set_source_rgb(0.75, 0.85, 0.75)
+                colors = (0.75, 0.85, 0.75)
             else:
-                cr.set_source_rgb(0.75, 0.75, 0.85)
-            cr.fill_preserve()
-
-            cr.set_source_rgb(1, 1, 1)
-            cr.stroke()
-
-            # draw heading
+                colors = (0.75, 0.75, 0.85)
+            self.draw_heading(cr, x, y, "", colors)
+            
             cr.set_source_rgba (0, 0, 0, 0.75)
+            # TODO: fix this when we implement multi-line support in centered-text
             self.text_above(cr, date.strftime("%a"), x, y +
                 self.hour_height / 2 - 2, self.day_width)
             self.text_below(cr, date.strftime("%x"), x, y +
@@ -379,19 +388,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         for i in range(0, 24):
             y = (i + 1) * self.hour_height + self.y_scroll_offset
-            cr.rectangle(0, y, self.day_width, self.hour_height)
-            cr.set_source_rgb (0.75, 0.75, 0.75)
-            cr.fill_preserve()
-            cr.set_source_rgb (1, 1, 1)
-            cr.stroke()
-
-            # draw heading
-            cr.set_source_rgba(0, 0, 0, .75)
-            text = "%2d:00" % i
-            tw, th = cr.text_extents(text)[2:4]
-            cr.move_to ((self.day_width / 2) - tw / 2,
-                y + (self.hour_height / 2) - th / 2)
-            cr.show_text(text)
+            self.draw_heading(cr, 0, y, "%2d:00" % i,
+                              (0.75, 0.75, 0.75))
 
         cr.restore()
 
