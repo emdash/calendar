@@ -350,8 +350,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.line_to (x, self.height)
             cr.stroke()
 
-    def draw_day_headers(self, cr, x, day):
+    def draw_day_headers(self, cr, x):
         y = self.y
+        day = int (self.date)
+
         cr.save()
         cr.rectangle(self.day_width, y, self.width - self.day_width,
             self.height)
@@ -482,10 +484,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
         x = self.day_width - (self.date * self.day_width % self.day_width)
-        day = int (self.date)
 
         self.clear_background(cr)
-        self.draw_day_headers(cr, x, day)
+        self.draw_day_headers(cr, x)
         self.draw_hour_headers(cr)
         self.draw_grid(cr, x)
         self.draw_events(cr, x)
