@@ -261,18 +261,19 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.show_text(text)
         cr.restore()
 
-    def draw_heading(self, cr, x, y, text, colors):
+    def filled_box(self, cr, x, y, height, fill, stroke):
         cr.rectangle(x, y, self.day_width, self.hour_height)
-        cr.set_source_rgb (*colors)
-
+        cr.set_source_rgb (*fill)
         cr.fill_preserve()
-        cr.set_source_rgb (1, 1, 1)
+        cr.set_source_rgb (*stroke)
         cr.stroke()
 
-        # TODO: replace this with global text color?
+    def labeled_box(self, cr, x, y, text, height, bgcolor):
+        self.filled_box(cr, x, y, self.hour_height,
+                        bgcolor, (1, 1, 1))
         cr.set_source_rgba(0, 0, 0, .75)
-        self.centered_text(cr, text, x, y, self.day_width, self.hour_height)
-                         
+        self.centered_text(cr, text, x, y, self.day_width, height)
+        
     def selection_handles(self, cr):
         if (not self.selected) or (not self.selected in self.events):
             return
@@ -372,10 +373,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.rectangle (x, y, self.day_width, self.hour_height)
 
             if weekday > 4:
-                colors = (0.75, 0.85, 0.75)
+                bgcolor = (0.75, 0.85, 0.75)
             else:
-                colors = (0.75, 0.75, 0.85)
-            self.draw_heading(cr, x, y, "", colors)
+                bgcolor = (0.75, 0.75, 0.85)
+            self.filled_box(cr, x, y, self.hour_height, bgcolor, (1, 1, 1))
             
             cr.set_source_rgba (0, 0, 0, 0.75)
             # TODO: fix this when we implement multi-line support in centered-text
@@ -388,6 +389,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         y = self.y_scroll_offset
         x = self.day_width - (self.date * self.day_width % self.day_width)
         cr.restore()
+        
+    def draw_hour_header(self, cr, hour):
+        self.labeled_box(
+            cr, 0, (hour + 1) * self.hour_height +
+            self.y_scroll_offset, "%2d:00" % hour, self.hour_height,
+            (0.75, 0.75, 0.75))
 
     def draw_hour_headers(self, cr):
         cr.save()
@@ -396,9 +403,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.clip()
 
         for i in range(0, 24):
-            y = (i + 1) * self.hour_height + self.y_scroll_offset
-            self.draw_heading(cr, 0, y, "%2d:00" % i,
-                              (0.75, 0.75, 0.75))
+            self.draw_hour_header(cr, i)
 
         cr.restore()
 
