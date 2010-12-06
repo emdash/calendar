@@ -393,34 +393,41 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         cr.restore()
 
+    def draw_event(self, cr, x, event, day):
+        start = event.start.hour + (event.start.minute / 60.0)
+        duration = event.get_duration().seconds / 60.0/ 60.0
+
+        x = x + day * self.day_width
+        y = self.y_scroll_offset + start * self.hour_height +\
+            self.hour_height
+
+        height = duration * self.hour_height
+                
+        cr.rectangle(x + 2, y, self.day_width - 4, height)
+        cr.set_source_rgba(0.55, 0.55, 0.55)
+        cr.fill_preserve()
+        
+        cr.save()
+        cr.clip()
+        cr.set_source_rgb(0, 0, 0)
+                
+        pcr = pangocairo.CairoContext(cr)
+        lyt = pcr.create_layout()
+        lyt.set_font_description(self.font_desc)
+        lyt.set_text(event.description)
+        lyt.set_width(pango.PIXELS(self.day_width - 4 + 100))
+        cr.move_to(x + 2, y)
+        pcr.show_layout(lyt)
+        cr.restore()
+
+        self.events[event] = (x, y, self.day_width, height)
+
     def draw_events(self, cr, x, y):
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
-            for start, duration, text, evt in self.get_schedule(self.date + i):
-                y = self.y_scroll_offset + start * self.hour_height +\
-                    self.hour_height
-                height = duration * self.hour_height
+            for evt in self.get_schedule(self.date + i):
+                self.draw_event(cr, x, evt, i)
 
-                cr.rectangle(x + 2, y, self.day_width - 4, height)
-                cr.set_source_rgba(0.55, 0.55, 0.55)
-                cr.fill_preserve()
-
-                cr.save()
-                cr.clip()
-                cr.set_source_rgb(0, 0, 0)
-                
-                pcr = pangocairo.CairoContext(cr)
-                lyt = pcr.create_layout()
-                lyt.set_font_description(self.font_desc)
-                lyt.set_text(text)
-                lyt.set_width(pango.PIXELS(self.day_width - 4 + 100))
-                cr.move_to(x + 2, y)
-                pcr.show_layout(lyt)
-                cr.restore()
-
-                self.events[evt] = (x, y, self.day_width, height)
-
-            x += self.day_width
         cr.restore()
 
     def draw_marquee(self, cr):
@@ -504,11 +511,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def get_schedule(self, date):
         # test schedule
-        return [(event.start.hour + (event.start.minute / 60.0), 
-            event.get_duration().seconds / 60.0/ 60.0,
-            event.description,
-            event)
-                for event in self.model.get_events(date)]
+        return self.model.get_events(date)
 
 class SelectPoint(Command):
 
