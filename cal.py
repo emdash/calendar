@@ -31,6 +31,7 @@ from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
+import settings
 
 WIDTH = 600
 HEIGHT = 400
