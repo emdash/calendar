@@ -217,6 +217,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             return False
         return True
 
+    def get_week_pixel_offset(self):
+        return self.day_width - (self.date * self.day_width % self.day_width)
+    
     def do_simple_update(self, cr):
         cr.identity_matrix()
         self.bounds = goocanvas.Bounds(self.x, self.y,
@@ -331,7 +334,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.set_source_rgb(0.8, 0.8, 0.8)
         cr.fill()
 
-    def draw_grid(self, cr, x):
+    def draw_grid(self, cr):
         cr.save()
         cr.rectangle(self.day_width, self.hour_height, 
             self.width - self.day_width, self.height - self.hour_height)
@@ -343,6 +346,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
             cr.stroke()
 
+        x = self.get_week_pixel_offset()
+
         for i in xrange(0, (self.width / self.day_width) + 1):
             # draw vertical lines
             x += self.day_width
@@ -350,7 +355,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.line_to (x, self.height)
             cr.stroke()
 
-    def draw_day_headers(self, cr, x):
+    def draw_day_headers(self, cr):
+        x = self.get_week_pixel_offset()
         y = self.y
         day = int (self.date)
 
@@ -396,11 +402,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         cr.restore()
 
-    def draw_event(self, cr, x, event, day):
+    def draw_event(self, cr, event, day):
         start = event.start.hour + (event.start.minute / 60.0)
         duration = event.get_duration().seconds / 60.0/ 60.0
 
-        x = x + day * self.day_width
+        x = self.get_week_pixel_offset() + day * self.day_width
         y = self.y_scroll_offset + start * self.hour_height +\
             self.hour_height
 
@@ -425,12 +431,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         self.events[event] = (x, y, self.day_width, height)
 
-    def draw_events(self, cr, x):
+    def draw_events(self, cr):
         self.events = {}
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
             for evt in self.get_schedule(self.date + i):
-                self.draw_event(cr, x, evt, i)
+                self.draw_event(cr, evt, i)
 
         cr.restore()
 
@@ -483,13 +489,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
-        x = self.day_width - (self.date * self.day_width % self.day_width)
 
         self.clear_background(cr)
-        self.draw_day_headers(cr, x)
+        self.draw_day_headers(cr)
         self.draw_hour_headers(cr)
-        self.draw_grid(cr, x)
-        self.draw_events(cr, x)
+        self.draw_grid(cr)
+        self.draw_events(cr)
         self.draw_marquee(cr)
         self.selection_handles (cr)
         self.draw_top_left_corner (cr)
