@@ -1,5 +1,14 @@
 import cairo
 
+## general options
+
+width = 600
+height = 400
+day_width = width / 8
+hour_height = 50
+
+## colors
+
 text_color = cairo.SolidPattern(0, 0, 0, .75)
 
 # grid

@@ -33,11 +33,6 @@ from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
 import settings
 
-WIDTH = 600
-HEIGHT = 400
-DAY_WIDTH = WIDTH / 8
-HOUR_HEIGHT = 50
-
 #TODO: edit the name of an event
 #TODO: repeating events
 #TODO: event alarms
@@ -105,7 +100,7 @@ class VelocityController(MouseInteraction):
     def point_in_area(self, point):
         x, y = point
         return (self.instance.x <= x <= self.instance.width and 
-            self.instance.y <= y <= HOUR_HEIGHT)
+            self.instance.y <= y <= self.instance.hour_height)
 
     def observe(self, instance):
         self.area = goocanvas.Bounds(instance.day_width, 0, instance.width,
@@ -142,10 +137,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     x = gobject.property(type=int, default=0)
     y = gobject.property(type=int, default=0)
-    width = gobject.property(type=int, default=WIDTH)
-    height = gobject.property(type=int, default=HEIGHT)
-    hour_height = gobject.property(type=int, default=HOUR_HEIGHT)
-    day_width = gobject.property(type=int, default=DAY_WIDTH)
+    width = gobject.property(type=int, default=settings.width)
+    height = gobject.property(type=int, default=settings.height)
+    hour_height = gobject.property(type=int, default=settings.hour_height)
+    day_width = gobject.property(type=int, default=settings.day_width)
     date = gobject.property(type=float,
         default=datetime.date.today().toordinal())
     y_scroll_offset = gobject.property(type=int, default=0)
@@ -728,7 +723,7 @@ class App(object):
         self.schedule = self.calendar_item.schedule
         self.model = self.schedule.model
         canvas.get_root_item().add_child(self.calendar_item)
-        canvas.set_size_request(WIDTH, HEIGHT)
+        canvas.set_size_request(settings.width, settings.height)
         canvas.show()
         canvas.connect("size-allocate", self.size_allocate_cb)
         hbox.pack_start(canvas)
