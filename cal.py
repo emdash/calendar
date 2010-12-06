@@ -331,7 +331,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.set_source_rgb(0.8, 0.8, 0.8)
         cr.fill()
 
-    def draw_grid(self, cr, x, y):
+    def draw_grid(self, cr, x):
         cr.save()
         cr.rectangle(self.day_width, self.hour_height, 
             self.width - self.day_width, self.height - self.hour_height)
@@ -350,7 +350,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.line_to (x, self.height)
             cr.stroke()
 
-    def draw_day_headers(self, cr, x, y, day):
+    def draw_day_headers(self, cr, x, day):
+        y = self.y
         cr.save()
         cr.rectangle(self.day_width, y, self.width - self.day_width,
             self.height)
@@ -380,7 +381,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         x = self.day_width - (self.date * self.day_width % self.day_width)
         cr.restore()
 
-    def draw_hour_headers(self, cr, y):
+    def draw_hour_headers(self, cr):
         cr.save()
         cr.rectangle(0, self.hour_height, self.day_width, self.height -
             self.hour_height)
@@ -422,7 +423,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         self.events[event] = (x, y, self.day_width, height)
 
-    def draw_events(self, cr, x, y):
+    def draw_events(self, cr, x):
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
             for evt in self.get_schedule(self.date + i):
@@ -481,14 +482,13 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.identity_matrix()
         self.events = {}
         x = self.day_width - (self.date * self.day_width % self.day_width)
-        y = self.x
         day = int (self.date)
 
         self.clear_background(cr)
-        self.draw_day_headers(cr, x, y, day)
-        self.draw_hour_headers(cr, y)
-        self.draw_grid(cr, x, y)
-        self.draw_events(cr, x, y)
+        self.draw_day_headers(cr, x, day)
+        self.draw_hour_headers(cr)
+        self.draw_grid(cr, x)
+        self.draw_events(cr, x)
         self.draw_marquee(cr)
         self.selection_handles (cr)
         self.draw_top_left_corner (cr)
