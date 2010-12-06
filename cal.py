@@ -54,7 +54,6 @@ HOUR_HEIGHT = 50
 #TODO: zooming support (changes day_width/height size)
 #TODO: change cursors
 #TODO: start writing test cases, we've got too many features already
-#TODO: don't hard-code colors or drawing styles
 #TODO: port away from goocanvas ?
 #TODO: allow multiple selections
 #TODO: do something sane when events overlap
@@ -264,15 +263,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def filled_box(self, cr, x, y, height, fill, stroke):
         cr.rectangle(x, y, self.day_width, self.hour_height)
-        cr.set_source_rgba (*fill)
+        cr.set_source(fill)
         cr.fill_preserve()
-        cr.set_source_rgba (*stroke)
+        cr.set_source(stroke)
         cr.stroke()
 
     def labeled_box(self, cr, x, y, text, height, bgcolor):
         self.filled_box(cr, x, y, self.hour_height,
                         bgcolor, settings.heading_outline_color)
-        cr.set_source_rgba(*settings.text_color)
+        cr.set_source(settings.text_color)
         self.centered_text(cr, text, x, y, self.day_width, height)
         
     def selection_handles(self, cr):
@@ -282,7 +281,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         (x, y, width, height) = self.events[self.selected]
         radius = 10
         cr.save()
-        cr.set_source_rgba(*settings.handle_bg_color)
+        cr.set_source(settings.handle_bg_color)
         x1, y1 = (x + 2, y - 2)
         x2, y2 = (x + width - 2, y + height + 2)
 
@@ -303,7 +302,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.line_to(x2, y2)
         cr.fill()
 
-        cr.set_source_rgba(*settings.handle_arrow_color)
+        cr.set_source(settings.handle_arrow_color)
         
         cr.move_to (x1 + width / 2, y1 - radius + 1)
         cr.rel_line_to (-3, radius - 2)
@@ -333,7 +332,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def clear_background(self, cr):
         cr.rectangle(self.x, self.y, self.width, self.height)
-        cr.set_source_rgba(*settings.grid_bg_color)
+        cr.set_source(settings.grid_bg_color)
         cr.fill()
 
     def draw_grid(self, cr):
@@ -342,7 +341,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.width - self.day_width, self.height - self.hour_height)
         cr.clip()
 
-        cr.set_source_rgba(*settings.grid_line_color)
+        cr.set_source(settings.grid_line_color)
         for i in xrange(1, 25):
             cr.move_to(self.day_width, self.y_scroll_offset + i * self.hour_height)
             cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
@@ -372,7 +371,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.filled_box(cr, x, y, self.hour_height, bgcolor,
                         settings.heading_outline_color)
             
-        cr.set_source_rgba (*settings.text_color)
+        cr.set_source(settings.text_color)
         # TODO: fix this when we implement multi-line support in centered-text
         self.text_above(cr, date.strftime("%a"), x, y +
                         self.hour_height / 2 - 2, self.day_width)
@@ -418,12 +417,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         height = duration * self.hour_height
                 
         cr.rectangle(x + 2, y, self.day_width - 4, height)
-        cr.set_source_rgba(*settings.default_event_bg_color)
+        cr.set_source(settings.default_event_bg_color)
         cr.fill_preserve()
         
         cr.save()
         cr.clip()
-        cr.set_source_rgba(*settings.default_event_text_color)
+        cr.set_source(settings.default_event_text_color)
                 
         pcr = pangocairo.CairoContext(cr)
         lyt = pcr.create_layout()
@@ -450,11 +449,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             if start and end:
                 x1, y1 = start
                 x2, y2 = end
-                cr.set_source_rgba(*settings.marquee_fill_color)
+                cr.set_source(settings.marquee_fill_color)
                 height = y2 - y1
                 cr.rectangle(x1, y1, self.day_width, height)
                 cr.fill()
-                cr.set_source_rgba(*settings.marquee_text_color)
+                cr.set_source(settings.marquee_text_color)
 
                 text = self.selected_start.strftime ("%X")
                 self.text_above(cr, text, x1, y1 - 2, self.day_width)
@@ -470,18 +469,18 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 self.centered_text(cr, text, x1, y1, self.day_width, height)
 
     def draw_top_left_corner(self, cr):
-        cr.set_source_rgba(*settings.corner_bg_color)
+        cr.set_source(settings.corner_bg_color)
         cr.rectangle (self.x, self.y, self.day_width, self.hour_height)
         cr.fill_preserve()
-        cr.set_source_rgba(*settings.heading_outline_color)
+        cr.set_source(settings.heading_outline_color)
         cr.stroke()
         
-        cr.set_source_rgba(*settings.text_color)
+        cr.set_source(settings.text_color)
         self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
             0, 0, self.day_width, self.hour_height)
 
     def draw_comfort_lines(self, cr):
-        cr.set_source_rgba(*settings.comfort_line_color)
+        cr.set_source(settings.comfort_line_color)
         cr.move_to(self.x, self.hour_height)
         cr.line_to(self.width, self.hour_height)
         cr.stroke()
