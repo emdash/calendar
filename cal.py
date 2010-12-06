@@ -424,6 +424,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.events[event] = (x, y, self.day_width, height)
 
     def draw_events(self, cr, x):
+        self.events = {}
         cr.set_source_rgb(0, 0, 0)
         for i in xrange (0, (self.width / self.day_width) + 1):
             for evt in self.get_schedule(self.date + i):
@@ -480,7 +481,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
-        self.events = {}
         x = self.day_width - (self.date * self.day_width % self.day_width)
         day = int (self.date)
 
