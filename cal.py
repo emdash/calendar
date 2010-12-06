@@ -356,38 +356,36 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             cr.line_to (x, self.height)
             cr.stroke()
 
-    def draw_day_headers(self, cr):
-        x = self.get_week_pixel_offset()
+    def draw_day_header(self, cr, nth_day):
+        x = self.get_week_pixel_offset() + nth_day * self.day_width
         y = self.y
-        day = int (self.date)
+        leftmost_day = int(self.date)
+        
+        date = self.get_date(leftmost_day + nth_day)
+        weekday = date.weekday()
 
+        if weekday > 4:
+            bgcolor = (0.75, 0.85, 0.75)
+        else:
+            bgcolor = (0.75, 0.75, 0.85)
+        self.filled_box(cr, x, y, self.hour_height, bgcolor, (1, 1, 1))
+            
+        cr.set_source_rgba (0, 0, 0, 0.75)
+        # TODO: fix this when we implement multi-line support in centered-text
+        self.text_above(cr, date.strftime("%a"), x, y +
+                        self.hour_height / 2 - 2, self.day_width)
+        self.text_below(cr, date.strftime("%x"), x, y +
+                        self.hour_height / 2 + 2, self.day_width)
+
+    def draw_day_headers(self, cr):
         cr.save()
-        cr.rectangle(self.day_width, y, self.width - self.day_width,
+        cr.rectangle(self.day_width, self.y, self.width - self.day_width,
             self.height)
         cr.clip()
 
         for i in xrange(0, (self.width / self.day_width) + 1):
-            date = self.get_date(day + i)
-            weekday = date.weekday()
-
-            cr.rectangle (x, y, self.day_width, self.hour_height)
-
-            if weekday > 4:
-                bgcolor = (0.75, 0.85, 0.75)
-            else:
-                bgcolor = (0.75, 0.75, 0.85)
-            self.filled_box(cr, x, y, self.hour_height, bgcolor, (1, 1, 1))
+            self.draw_day_header(cr, i)
             
-            cr.set_source_rgba (0, 0, 0, 0.75)
-            # TODO: fix this when we implement multi-line support in centered-text
-            self.text_above(cr, date.strftime("%a"), x, y +
-                self.hour_height / 2 - 2, self.day_width)
-            self.text_below(cr, date.strftime("%x"), x, y +
-                self.hour_height / 2 + 2, self.day_width)
-            x += self.day_width
-
-        y = self.y_scroll_offset
-        x = self.day_width - (self.date * self.day_width % self.day_width)
         cr.restore()
         
     def draw_hour_header(self, cr, hour):
