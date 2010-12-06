@@ -219,7 +219,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def get_week_pixel_offset(self):
         return self.day_width - (self.date * self.day_width % self.day_width)
-    
+
     def do_simple_update(self, cr):
         cr.identity_matrix()
         self.bounds = goocanvas.Bounds(self.x, self.y,
