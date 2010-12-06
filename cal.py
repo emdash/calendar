@@ -32,6 +32,7 @@ from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
 import settings
+import shapes
 
 #TODO: edit the name of an event
 #TODO: repeating events
@@ -219,55 +220,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.identity_matrix()
         self.bounds = goocanvas.Bounds(self.x, self.y,
             self.x + self.width, self.y + self.height)
-
-    def centered_text(self, cr, text, x, y, width, height):
-        cr.save()
-        cr.rectangle(x, y, width, height)
-        cr.clip()
-        tw, th = cr.text_extents(text)[2:4]
-        tw = min(width, tw)
-        th = min(height, th)
-        cr.move_to (x + (width / 2) - tw / 2,
-            y + (height / 2) + (th / 2))
-        cr.show_text(text)
-        cr.restore()
-
-    def text_above(self, cr, text, x, y, width):
-        cr.save()
-        tw, th = cr.text_extents(text)[2:4]
-        tw = min(width, tw)
-        th = th
-        cr.rectangle(x, y - th, width, th)
-        cr.clip()
-        cr.move_to (x + (width / 2) - tw / 2,
-            y)
-        cr.show_text(text)
-        cr.restore()
-
-    def text_below(self, cr, text, x, y, width):
-        cr.save()
-        tw, th = cr.text_extents(text)[2:4]
-        tw = min(width, tw)
-        th = th
-        cr.rectangle(x, y, width, th)
-        cr.clip()
-        cr.move_to (x + (width / 2) - tw / 2,
-            y + th)
-        cr.show_text(text)
-        cr.restore()
-
-    def filled_box(self, cr, x, y, height, fill, stroke):
-        cr.rectangle(x, y, self.day_width, self.hour_height)
-        cr.set_source(fill)
-        cr.fill_preserve()
-        cr.set_source(stroke)
-        cr.stroke()
-
-    def labeled_box(self, cr, x, y, text, height, bgcolor):
-        self.filled_box(cr, x, y, self.hour_height,
-                        bgcolor, settings.heading_outline_color)
-        cr.set_source(settings.text_color)
-        self.centered_text(cr, text, x, y, self.day_width, height)
         
     def selection_handles(self, cr):
         if (not self.selected) or (not self.selected in self.events):
@@ -363,14 +315,17 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             bgcolor = settings.weekday_bg_color
         else:
             bgcolor = settings.weekend_bg_color
-        self.filled_box(cr, x, y, self.hour_height, bgcolor,
-                        settings.heading_outline_color)
+        shapes.filled_box(
+            cr, x, y, self.day_width,
+            self.hour_height,
+            bgcolor,
+            settings.heading_outline_color)
             
         cr.set_source(settings.text_color)
         # TODO: fix this when we implement multi-line support in centered-text
-        self.text_above(cr, date.strftime("%a"), x, y +
+        shapes.text_above(cr, date.strftime("%a"), x, y +
                         self.hour_height / 2 - 2, self.day_width)
-        self.text_below(cr, date.strftime("%x"), x, y +
+        shapes.text_below(cr, date.strftime("%x"), x, y +
                         self.hour_height / 2 + 2, self.day_width)
 
     def draw_day_headers(self, cr):
@@ -385,10 +340,16 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
         
     def draw_hour_header(self, cr, hour):
-        self.labeled_box(
-            cr, 0, (hour + 1) * self.hour_height +
-            self.y_scroll_offset, "%2d:00" % hour, self.hour_height,
-            settings.hour_heading_color)
+        shapes.labeled_box(
+            cr,
+            0,
+            (hour + 1) * self.hour_height + self.y_scroll_offset,
+            "%2d:00" % hour,
+            self.day_width,
+            self.hour_height,
+            settings.hour_heading_color,
+            settings.heading_outline_color,
+            settings.text_color)
 
     def draw_hour_headers(self, cr):
         cr.save()
@@ -451,17 +412,17 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 cr.set_source(settings.marquee_text_color)
 
                 text = self.selected_start.strftime ("%X")
-                self.text_above(cr, text, x1, y1 - 2, self.day_width)
+                shapes.text_above(cr, text, x1, y1 - 2, self.day_width)
 
                 text = self.selected_end.strftime ("%X")
-                self.text_below(cr, text, x1, y1 + height + 2, self.day_width)
+                shapes.text_below(cr, text, x1, y1 + height + 2, self.day_width)
 
                 duration = self.selected_end - self.selected_start
                 m = int (duration.seconds / 60) % 60
                 h = int (duration.seconds / 60 / 60)
 
                 text = "%dh %dm" % (h, m)
-                self.centered_text(cr, text, x1, y1, self.day_width, height)
+                shapes.centered_text(cr, text, x1, y1, self.day_width, height)
 
     def draw_top_left_corner(self, cr):
         cr.set_source(settings.corner_bg_color)
@@ -471,7 +432,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.stroke()
         
         cr.set_source(settings.text_color)
-        self.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
+        shapes.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
             0, 0, self.day_width, self.hour_height)
 
     def draw_comfort_lines(self, cr):
