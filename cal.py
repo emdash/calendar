@@ -440,8 +440,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.draw_hour_headers(cr)
         self.draw_grid(cr)
         self.draw_events(cr)
+        
+        cr.save()
+        cr.rectangle(self.day_width, self.hour_height,
+                     self.width - self.day_width, self.height - self.hour_height)
+        cr.clip()
         self.draw_marquee(cr)
         self.selection_handles (cr)
+        cr.restore()
+        
         self.draw_top_left_corner (cr)
         self.draw_comfort_lines(cr)
 
