@@ -1,4 +1,5 @@
 import cairo
+import pango
 
 ## general options
 
@@ -6,6 +7,7 @@ width = 600
 height = 400
 day_width = width / 8
 hour_height = 50
+default_font = pango.FontDescription("Sans 8")
 
 ## colors
 
@@ -32,4 +34,3 @@ marquee_text_color = cairo.SolidPattern(0, 0, 0, 0.75)
 # default event color
 default_event_bg_color = cairo.SolidPattern(0.55, 0.55, 0.55)
 default_event_text_color = cairo.SolidPattern(0, 0, 0)
-

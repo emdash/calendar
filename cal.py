@@ -314,18 +314,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             bgcolor = settings.weekday_bg_color
         else:
             bgcolor = settings.weekend_bg_color
-        shapes.filled_box(
-            cr, x, y, self.day_width,
+            
+        shapes.labeled_box(
+            cr, x, y,
+            date.strftime("%a\n%x"),
+            self.day_width,
             self.hour_height,
             bgcolor,
-            settings.heading_outline_color)
-            
-        cr.set_source(settings.text_color)
-        # TODO: fix this when we implement multi-line support in centered-text
-        shapes.text_above(cr, date.strftime("%a"), x, y +
-                        self.hour_height / 2 - 2, self.day_width)
-        shapes.text_below(cr, date.strftime("%x"), x, y +
-                        self.hour_height / 2 + 2, self.day_width)
+            settings.heading_outline_color,
+            settings.text_color)
 
     def draw_day_headers(self, cr):
         cr.save()
@@ -375,19 +372,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.set_source(settings.default_event_bg_color)
         cr.fill_preserve()
         
-        cr.save()
-        cr.clip()
-        cr.set_source(settings.default_event_text_color)
-                
-        pcr = pangocairo.CairoContext(cr)
-        lyt = pcr.create_layout()
-        lyt.set_font_description(self.font_desc)
-        lyt.set_text(event.description)
-        lyt.set_width(pango.PIXELS(self.day_width - 4 + 100))
-        cr.move_to(x + 2, y)
-        pcr.show_layout(lyt)
-        cr.restore()
-
+        shapes.left_aligned_text(cr, event.description,
+                                 x + 2, y,
+                                 self.day_width - 4, height,
+                                 settings.default_event_text_color)
         self.events[event] = (x, y, self.day_width, height)
 
     def draw_events(self, cr):
@@ -421,7 +409,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 h = int (duration.seconds / 60 / 60)
 
                 text = "%dh %dm" % (h, m)
-                shapes.centered_text(cr, text, x1, y1, self.day_width, height)
+                shapes.centered_text(cr, text, x1, y1, self.day_width, height, settings.text_color)
 
     def draw_top_left_corner(self, cr):
         cr.set_source(settings.corner_bg_color)
@@ -432,7 +420,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         
         cr.set_source(settings.text_color)
         shapes.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
-            0, 0, self.day_width, self.hour_height)
+            0, 0, self.day_width, self.hour_height, settings.text_color)
 
     def draw_comfort_lines(self, cr):
         cr.set_source(settings.comfort_line_color)
