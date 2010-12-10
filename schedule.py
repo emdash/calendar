@@ -73,7 +73,10 @@ class Schedule(object):
         self.callback = None
         self.args = None
         self.load(path)
-        self.loadTimelog("/home/brandon/.gtimelog/timelog.txt")
+        try:
+            self.loadTimelog("/home/brandon/.gtimelog/timelog.txt")
+        except IOError:
+            pass
 
     def add_event(self, event):
         self.events.append(event)
