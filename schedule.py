@@ -72,11 +72,6 @@ class Schedule(object):
         self.by_date = {}
         self.callback = None
         self.args = None
-        self.load(path)
-        try:
-            self.loadTimelog("/home/brandon/.gtimelog/timelog.txt")
-        except IOError:
-            pass
 
     def add_event(self, event):
         self.events.append(event)
@@ -101,16 +96,34 @@ class Schedule(object):
     def get_events(self, date):
         return self.by_date.get(int(date), [])
 
+    dateformat = "%m/%d/%Y:%H:%M:%S"
+
+    def _datetime_from_string(self, string):
+        return datetime.datetime.strptime(string.strip(), self.dateformat)
+
     def load(self, path):
         try:
             data = open(path, "r").readlines()
             for line in data:
                 start, end, description = line.split(",")
-                start = datetime.datetime.strptime(start.strip(), "%m/%d/%Y:%H:%M:%S")
-                end = datetime.datetime.strptime(end.strip(), "%m/%d/%Y:%H:%M:%S")
+                start = self._datetime_from_string(start)
+                end = self._datetime_from_string(end)
                 self.add_event(Event(start, end, description.strip()))
         except IOError:
             pass
+
+    def save(self, path):
+        dest = open(path, "w")
+        for event in self.events:
+            self._save_event(dest, event)
+
+    def _save_event(self, dest, event):
+        print >> dest, ",".join((self._datetime_to_string(event.start),
+                                self._datetime_to_string(event.end),
+                                event.description))
+
+    def _datetime_to_string(self, datetime):
+        return datetime.strftime(self.dateformat)
 
     def loadTimelog(self, path):
 

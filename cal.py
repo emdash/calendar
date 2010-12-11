@@ -33,6 +33,7 @@ from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
 import settings
 import shapes
+import os
 
 #TODO: edit the name of an event
 #TODO: repeating events
@@ -727,7 +728,19 @@ class App(object):
         MenuCommand.update_actions(self)
 
     def run(self):
+        self.load()
         gtk.main()
+        self.save()
+        gobject.timeout_add(60000, self.save)
+        
+    path = os.path.expanduser("~/.calendar_data")
+    
+    def load(self):
+        self.model.load(self.path)
+
+    def save(self):
+        self.model.save(self.path)
+        return True
 
     def do_command(self, unused_action, command):
         cmd = command(self)
