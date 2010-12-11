@@ -10,7 +10,19 @@ class Event(object):
         self.date = None
         self.start = start
         self.end = end
+        self._description = None
         self.description = description
+
+    def get_description(self):
+        return self._description
+
+    def set_description(self, value):
+        if value != self.description:
+            self._description = value
+            # FIXME: make callback more generic
+            self._update_date()
+
+    description = property(get_description, set_description)
 
     def set_date_changed_cb(self, callback, args):
         self.callback = callback
