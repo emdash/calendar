@@ -627,6 +627,7 @@ class NewEvent(MenuCommand):
         self.app.model.add_event(self.event)
         self.app.schedule.selected_start = None
         self.app.schedule.selected_end = None
+        self.app.schedule.selected = self.event
         return True
 
     def undo(self):
@@ -653,6 +654,7 @@ class DelEvent(MenuCommand):
 
     def undo(self):
         self.app.model.add_event(self.event)
+        self.app.schedule.selected = self.event
         return True
 
 class App(object):
