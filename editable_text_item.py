@@ -21,13 +21,26 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
         self.connect("notify", self.do_notify)
         self.connect("key-press-event", self._key_press_event)
         self.connect("key-release-event", self._key_release_event)
+        self.connect("focus-in-event", self._focus_in_event)
+        self.connect("focus-out-event", self._focus_out_event)
         self.cursor_showing = True
+        self.focused = False
+
+    def _focus_in_event(self, item, target, event):
         gobject.timeout_add(500, self._blink_cursor)
+        self._focused = True
+
+    def _focus_out_event(self, item, target, event):
+        self._focused = False
 
     def _blink_cursor(self):
-        self.cursor_showing = not self.cursor_showing
-        self.changed(False)
-        return True
+        if self._focused:
+            self.cursor_showing = not self.cursor_showing
+            self.changed(False)
+        else:
+            self.cursor_showing = False
+            self.changed(False)
+        return self._focused
 
     def _key_press_event(self, item, target, event):
         if self.proxy:
@@ -120,7 +133,8 @@ if __name__ == "__main__":
             y = 100,
             width = 40,
             height = 40,
-            text="Hello, world"))
+            text="Hello, world",
+            show_frame = False))
     i.set_proxy(e)
     
     c.get_root_item().add_child(i)
