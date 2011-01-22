@@ -37,10 +37,8 @@ import settings
 import shapes
 import os
 
-#TODO: edit the name of an event
 #TODO: repeating events
 #TODO: event alarms
-#TODO: save to file
 #TODO: sync with google calendar
 #TODO: sync with facebook calendar
 #TODO: sync with evolution ??
