@@ -31,8 +31,7 @@ import math
 from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
-from behavior import MouseInteraction
-from editable_text_item import TextInput
+from behavior import MouseInteraction, TextInput
 import settings
 import shapes
 import os
