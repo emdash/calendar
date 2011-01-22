@@ -163,9 +163,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.selected = None
         self.font_desc = pango.FontDescription("Sans 8")
         self.editable_text = EditableTextItem(show_frame=False)
-        self.editable_text.connect("notify::text", self._editable_text_notify_text_cb)
 
     def model_changed(self):
+        self.update_editor()
         self.changed(False)
 
     def get_date(self, i):
@@ -473,16 +473,26 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.select_event(self.point_to_event(x, y))
 
     def select_event(self, event):
-        self.selected = event
-        self.changed(False)
+        print "got here", event
         self.configure_editor(event)
+        self.selected = event
+        self.update_editor()
+        self.changed(False)
 
     def configure_editor(self, event):
-        if event:
-            self.editing = True
+        # save any existing text
+        if self.selected and (event != self.selected):
+            self.selected.description = self.editable_text.text
+
+        # add the canas item if it's not already visible
+        if (not self.selected) and event:
             self.get_parent().add_child(self.editable_text)
+            self.editing = True
+            
+        if event:
+            print "got here"
             self.get_canvas().grab_focus(self.editable_text)
-            self.update_editor()
+            self.editable_text.text = event.description
         else:
             self.editing = False
             self.editable_text.remove()
@@ -493,15 +503,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         
         event = self.selected
         x, y = self.datetime_to_point(event.start)
-        self.editable_text.props.text = event.description
-        self.editable_text.props.x = x + 2
-        self.editable_text.props.y = y + 2
-        self.editable_text.props.width = self.day_width - 4
+        self.editable_text.props.x = x
+        self.editable_text.props.y = y
+        self.editable_text.props.width = self.day_width
         self.editable_text.props.height = self.hour_height * event.get_duration().seconds / 60 / 60
-
-    def _editable_text_notify_text_cb(self, text, pspec):
-        if self.selected:
-            self.selected.description = text.text
 
     def get_schedule(self, date):
         # test schedule
