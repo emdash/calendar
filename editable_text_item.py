@@ -27,22 +27,19 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
         self.cursor_showing = True
         self.focused = False
         self.set_proxy(gtk.Entry())
+        gobject.timeout_add(500, self._blink_cursor)
+
 
     def _focus_in_event(self, item, target, event):
-        gobject.timeout_add(500, self._blink_cursor)
-        self._focused = True
+        pass
 
     def _focus_out_event(self, item, target, event):
-        self._focused = False
+        pass
 
     def _blink_cursor(self):
-        if self._focused:
-            self.cursor_showing = not self.cursor_showing
-            self.changed(False)
-        else:
-            self.cursor_showing = False
-            self.changed(False)
-        return self._focused
+        self.cursor_showing = not self.cursor_showing
+        self.changed(False)
+        return True
 
     def _key_press_event(self, item, target, event):
         if self.proxy:
