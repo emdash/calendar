@@ -148,11 +148,12 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
                 lyt.get_cursor_pos(self.ti.get_cursor_pos())[0]]
 
     def draw_cursor(self, cr, lyt):
+        if not self.cursor_showing:
+            return
+
         cr.save()
         cr.set_line_width(1)
         cr.set_antialias(cairo.ANTIALIAS_NONE)
-        if not self.cursor_showing:
-            return
         x, y, width, height = self.get_cursor_pos(lyt)
         cr.move_to(self.x + x + 2, self.y + y)
         cr.line_to(self.x + x + 2, self.y + y + height)
