@@ -46,7 +46,6 @@ import os
 #TODO: go to today
 #TODO: go to next {week, month}
 #TODO: go to selected
-#TODO: forward, back buttons
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
 #TODO: change cursors
