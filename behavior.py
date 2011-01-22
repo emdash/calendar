@@ -153,7 +153,7 @@ class MouseInteraction(Behavior):
         self.mdown = (event.x, event.y)
         self._button_down = True
         self.button_press()
-        return True
+        return False
 
     def on_button_release_event(self, item, target, event):
         self._common(item, target, event)
@@ -169,7 +169,7 @@ class MouseInteraction(Behavior):
         self._dragging = False
         self._button_down = False
         self.button_release()
-        return ret
+        return False
 
     def on_motion_notify_event(self, item, target, event):
         ret = False
@@ -187,7 +187,7 @@ class MouseInteraction(Behavior):
             self.move()
             ret = True
         self.motion_notify()
-        return ret
+        return False
 
     def button_press(self):
         pass
