@@ -34,6 +34,20 @@ class MouseCommand(Command):
         self.control = control
         self.do()
 
+    def flick(self, velocity_vector, finished_cb = None, shift=False,
+              control=False):
+        self.flick_velocity = velocity_vector
+        self.finished_cb = None
+        self.shift = shift
+        self.control = control
+        self.flick_start()
+
+    def flick_start(self):
+        pass
+
+    def flick_stop(self):
+        pass
+
 class MenuCommand(Command):
 
     label = ""
