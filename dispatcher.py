@@ -3,6 +3,8 @@ from behavior import MouseInteraction
 
 class MouseCommandDispatcher(MouseInteraction):
 
+    area = "ensures point-in-area-is-called"
+
     def __init__(self, undo, drag_commands, click_commands=()):
         self.selected = None
         self.item = None
@@ -12,12 +14,19 @@ class MouseCommandDispatcher(MouseInteraction):
         self.drag_commands = drag_commands
         self.click_commands = click_commands
 
+    def point_in_area(self, point):
+        return (self.can_do(self.drag_commands, point) or
+                self.can_do(self.click_commands, point))
+
     def button_press(self):
         if self.command:
             self.command.flick_stop()
 
     def drag_start(self):
         self.command = self.find_command(self.drag_commands)
+
+    def can_do(self, commands, point):
+        return any((cmd.can_do(self.instance, point) for cmd in commands))
     
     def find_command(self, commands):
         for command in commands:
