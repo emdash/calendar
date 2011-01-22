@@ -41,6 +41,7 @@ def text_function(func):
         func(cr, lyt, x, y, width, height)
         pcr.show_layout(lyt)
         cr.restore()
+        return lyt
     draw_pango_text.func_name = func.func_name
     draw_pango_text.__name__ = func.__name__
 
