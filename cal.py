@@ -44,7 +44,6 @@ import os
 #TODO: sync with evolution ??
 #TODO: message area (gtk-info bar?)
 #TODO: go to next {week, month}
-#TODO: go to selected
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: zooming support (changes day_width/height size)
 #TODO: change cursors
@@ -715,6 +714,25 @@ class GoToToday(MenuCommand):
     def undo(self):
         self.ap.schedule.date = self.date
 
+class GoToSelected(MenuCommand):
+
+    label = _("Selected")
+    tooltip = _("Scroll to the currently-selected item")
+
+    @classmethod
+    def can_do(cls, app):
+        return bool(app.schedule.selected)
+
+    def configure(self):
+        self.selected = self.app.schedule.selected
+        self.date = self.app.schedule.date
+
+    def do(self):
+        self.app.schedule.date = self.selected.start.toordinal()
+
+    def undo(self):
+        self.app.schedule.date = self.date
+        
 class App(object):
 
     ui = """
@@ -726,6 +744,7 @@ class App(object):
             <toolitem action="Back"/>
             <toolitem action="Forward"/>
             <toolitem action="GoToToday"/>
+            <toolitem action="GoToSelected"/>
             <separator />
             <toolitem action="NewEvent"/>
             <toolitem action="DelEvent"/>
