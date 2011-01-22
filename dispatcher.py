@@ -12,6 +12,10 @@ class MouseCommandDispatcher(MouseInteraction):
         self.drag_commands = drag_commands
         self.click_commands = click_commands
 
+    def button_press(self):
+        if self.command:
+            self.command.flick_stop()
+
     def drag_start(self):
         self.command = self.find_command(self.drag_commands)
     
@@ -28,7 +32,11 @@ class MouseCommandDispatcher(MouseInteraction):
     def drag_end(self):
         if self.command:
             self.undo.commit(self.command)
-        self.command = None
+
+    def flick(self):
+        if self.command:
+            self.command.flick(self.delta, None,
+                               self.event.state & gtk.gdk.SHIFT_MASK)
 
     def click(self):
         cmd = self.find_command(self.click_commands)
