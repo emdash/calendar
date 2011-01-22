@@ -627,10 +627,10 @@ class CalendarItem(goocanvas.Group):
 
     __gtype_name__ = "CalendarItem"
 
-    def __init__(self, undo, *args, **kwargs):
+    def __init__(self, undo, history, *args, **kwargs):
         goocanvas.Group.__init__(self, *args, **kwargs)
         self.schedule = CalendarBase(parent=self)
-        self.scrolling = MouseCommandDispatcher(undo, (DragCalendar,))
+        self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
         self.scrolling.observe(self.schedule)
         self.dispatcher = MouseCommandDispatcher(
             undo,
@@ -699,6 +699,9 @@ class App(object):
             <toolitem action="Undo"/>
             <toolitem action="Redo"/>
             <separator />
+            <toolitem action="Back"/>
+            <toolitem action="Forward"/>
+            <separator />
             <toolitem action="NewEvent"/>
             <toolitem action="DelEvent"/>
         </toolbar>
@@ -707,12 +710,15 @@ class App(object):
 
     def __init__(self):
         self.undo = UndoStack()
+        self.history = UndoStack(
+            gtk.Action("Back", None, None, gtk.STOCK_GO_BACK),
+            gtk.Action("Forward", None, None, gtk.STOCK_GO_FORWARD))
         w = gtk.Window()
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
         hbox = gtk.HBox()
         canvas = goocanvas.Canvas()
-        self.calendar_item = CalendarItem(self.undo)
+        self.calendar_item = CalendarItem(self.undo, self.history)
         self.schedule = self.calendar_item.schedule
         self.model = self.schedule.model
         canvas.get_root_item().add_child(self.calendar_item)
@@ -733,6 +739,9 @@ class App(object):
         actiongroup = MenuCommand.create_action_group(self)
         actiongroup.add_action(self.undo.undo_action)
         actiongroup.add_action(self.undo.redo_action)
+        actiongroup.add_action(self.history.undo_action)
+        actiongroup.add_action(self.history.redo_action)
+
         self.undo.undo_action.connect("activate", self.update_actions)
         self.undo.redo_action.connect("activate", self.update_actions)
         uiman.insert_action_group(actiongroup)
