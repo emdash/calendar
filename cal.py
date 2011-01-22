@@ -113,9 +113,7 @@ class VelocityController(MouseInteraction):
         self.scroller = KineticScrollAnimation(30)
 
     def point_in_area(self, point):
-        x, y = point
-        return (self.instance.x <= x <= self.instance.width and 
-            self.instance.y <= y <= self.instance.hour_height)
+        return DragCalendar.can_do(self.instance, point)
 
     def observe(self, instance):
         self.area = goocanvas.Bounds(instance.day_width, 0, instance.width,
@@ -127,16 +125,16 @@ class VelocityController(MouseInteraction):
         self.scroller.stop()
 
     def drag_start(self):
-        self._temp_date = self.instance.date
+        self.cmd = DragCalendar.create_for_point(self.instance, self.abs)
 
     def move(self):
-        self.instance.date = self._temp_date - (self.rel[0] / self.instance.day_width)
-        self.instance.changed(False)
+        self.cmd.update(self.abs, self.rel, self.event.state & gtk.gdk.SHIFT_MASK)
 
     def click(self):
         pass
 
     def drag_end(self):
+        self.cmd = None
         self.scroller.flick(self.delta[0] / self.instance.day_width)
 
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
@@ -657,6 +655,25 @@ class SetEventEnd(MouseCommand):
     def undo(self):
         self.event.end = self.pos
 
+class DragCalendar(MouseCommand):
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return (instance.x <= abs[0] <= instance.width and 
+                instance.y <= abs[1] <= instance.hour_height)
+
+
+    def __init__(self, instance, abs):
+        self.mdown = abs
+        self.instance = instance
+        self.pos = instance.date
+
+    def do(self):
+        self.instance.date = self.pos - (self.rel[0] / self.instance.day_width)
+
+    def undo(self):
+        self.instance.date = self.pos
+        
 class CalendarItem(goocanvas.Group):
 
     __gtype_name__ = "CalendarItem"
