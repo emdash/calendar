@@ -217,10 +217,11 @@ import gobject
 
 class Animation(Behavior):
 
-    def __init__(self, interval, duration=None):
+    def __init__(self, interval, duration=None, finished_cb=None):
         self.interval = interval
         self.running = False
         self.duration = duration
+        self.finished_cb = finished_cb
 
     def start(self):
         self.running = True
@@ -229,6 +230,8 @@ class Animation(Behavior):
 
     def stop(self):
         self.running = False
+        if self.finished_cb:
+            self.finished_cb()
         self.finish()
 
     def _timeout_cb(self):
