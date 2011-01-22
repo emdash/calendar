@@ -97,10 +97,7 @@ class VelocityController(MouseInteraction):
     def move(self):
         self.cmd.update(self.abs, self.rel, self.event.state & gtk.gdk.SHIFT_MASK)
 
-    def click(self):
-        pass
-
-    def drag_end(self):
+    def flick(self):
         self.cmd = None
         self.scroller.flick(self.delta[0] / self.instance.day_width)
 

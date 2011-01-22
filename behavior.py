@@ -141,6 +141,9 @@ class MouseInteraction(Behavior):
 
         return True
 
+    def flick_threshold(self):
+        return True
+
     def on_button_press_event(self, item, target, event):
         if self.area:
             if not self.point_in_area(self.abs):
@@ -157,6 +160,8 @@ class MouseInteraction(Behavior):
         ret = False
         if self._dragging:
             self.drag_end()
+            if self.flick_threshold():
+                self.flick()
             ret = True
         elif self._button_down:
             self.click()
@@ -203,6 +208,9 @@ class MouseInteraction(Behavior):
         pass
 
     def click(self):
+        pass
+
+    def flick(self):
         pass
 
 import gobject
