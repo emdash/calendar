@@ -205,3 +205,34 @@ class MouseInteraction(Behavior):
     def click(self):
         pass
 
+import gobject
+
+class Animation(Behavior):
+
+    def __init__(self, interval, duration=None):
+        self.interval = interval
+        self.running = False
+        self.duration = duration
+
+    def start(self):
+        self.running = True
+        self.clock = 0
+        gobject.timeout_add(self.interval, self._timeout_cb)
+
+    def stop(self):
+        self.running = False
+        self.finish()
+
+    def _timeout_cb(self):
+        self.clock += self.interval
+        if self.duration and (self.clock > self.duration):
+            self.stop()
+        self.step()
+        return self.running
+
+    def step(self):
+        pass
+
+    def finish(self):
+        pass
+        

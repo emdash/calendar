@@ -31,7 +31,7 @@ import math
 from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
-from behavior import MouseInteraction, TextInput
+from behavior import MouseInteraction, TextInput, Animation
 import settings
 import shapes
 import os
@@ -93,9 +93,24 @@ class Selector(MouseInteraction):
         cmd.do()
         self.undo.commit(cmd)
 
+class KineticScrollAnimation(Animation):
+
+    def flick(self, velocity):
+        self._velocity = velocity
+        self.start()
+
+    def step(self):
+        self.instance.date -= self._velocity
+        self._velocity *= 0.99
+        if 0 < abs(self._velocity) < 0.01:
+            self._velocity = 0
+        if self._velocity == 0:
+            self.stop()
+
 class VelocityController(MouseInteraction):
 
-    _velocity = 0
+    def __init__(self):
+        self.scroller = KineticScrollAnimation(30)
 
     def point_in_area(self, point):
         x, y = point
@@ -106,9 +121,10 @@ class VelocityController(MouseInteraction):
         self.area = goocanvas.Bounds(instance.day_width, 0, instance.width,
             instance.hour_height)
         MouseInteraction.observe(self, instance)
+        self.scroller.observe(instance)
 
     def button_press(self):
-        self._velocity = 0
+        self.scroller.stop()
 
     def drag_start(self):
         self._temp_date = self.instance.date
@@ -121,16 +137,7 @@ class VelocityController(MouseInteraction):
         pass
 
     def drag_end(self):
-        self._velocity = self.delta[0] / self.instance.day_width
-        gobject.timeout_add(30, self._move)
-
-    def _move(self):
-        self.instance.date -= self._velocity
-        self._velocity *= 0.99
-        if 0 < abs(self._velocity) < 0.01:
-            self._velocity = 0
-        return bool(self._velocity)
-
+        self.scroller.flick(self.delta[0] / self.instance.day_width)
 
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
