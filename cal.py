@@ -31,6 +31,7 @@ from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
+from editable_text_item import EditableTextItem
 import settings
 import shapes
 import os
@@ -132,6 +133,7 @@ class VelocityController(MouseInteraction):
             self._velocity = 0
         return bool(self._velocity)
 
+
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     __gtype_name__ = "CalendarBase"
@@ -152,12 +154,16 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
+        self.editing = False
+                
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
         self.connect("notify", self.do_notify)
         self.events = {}
         self.selected = None
         self.font_desc = pango.FontDescription("Sans 8")
+        self.editable_text = EditableTextItem(show_frame=False)
+        self.editable_text.connect("notify::text", self._editable_text_notify_text_cb)
 
     def model_changed(self):
         self.changed(False)
@@ -205,6 +211,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def do_notify(self, something, something_else):
         #self.day_width = self.width / 8
         self.changed(True)
+        self.update_editor()
 
     def do_simple_is_item_at(self, x, y, cr, pointer_event):
         if not (self.x <= x <= (self.x + self.width)):
@@ -372,11 +379,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.rectangle(x + 2, y, self.day_width - 4, height)
         cr.set_source(settings.default_event_bg_color)
         cr.fill_preserve()
-        
-        shapes.left_aligned_text(cr, event.description,
-                                 x + 2, y,
-                                 self.day_width - 4, height,
-                                 settings.default_event_text_color)
+
+        if event != self.selected:
+            shapes.left_aligned_text(cr, event.description,
+                                     x + 2, y,
+                                     self.day_width - 4, height,
+                                     settings.default_event_text_color)
         self.events[event] = (x, y, self.day_width, height)
 
     def draw_events(self, cr):
@@ -467,6 +475,33 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def select_event(self, event):
         self.selected = event
         self.changed(False)
+        self.configure_editor(event)
+
+    def configure_editor(self, event):
+        if event:
+            self.editing = True
+            self.get_parent().add_child(self.editable_text)
+            self.get_canvas().grab_focus(self.editable_text)
+            self.update_editor()
+        else:
+            self.editing = False
+            self.editable_text.remove()
+
+    def update_editor(self):
+        if not (self.editing and self.selected):
+            return
+        
+        event = self.selected
+        x, y = self.datetime_to_point(event.start)
+        self.editable_text.props.text = event.description
+        self.editable_text.props.x = x + 2
+        self.editable_text.props.y = y + 2
+        self.editable_text.props.width = self.day_width - 4
+        self.editable_text.props.height = self.hour_height * event.get_duration().seconds / 60 / 60
+
+    def _editable_text_notify_text_cb(self, text, pspec):
+        if self.selected:
+            self.selected.description = text.text
 
     def get_schedule(self, date):
         # test schedule
