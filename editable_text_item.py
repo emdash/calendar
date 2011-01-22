@@ -70,8 +70,7 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
         self.changed(True)
 
     def do_simple_is_item_at(self, x, y, cr, pointer_event):
-        return ((self.x <= x <= self.x + self.width) and
-                (self.y <= y <= self.y + self.height))
+        return False
 
     def do_simple_update(self, cr):
         cr.identity_matrix()
