@@ -739,13 +739,13 @@ class App(object):
             <toolitem action="Undo"/>
             <toolitem action="Redo"/>
             <separator />
+            <toolitem action="NewEvent"/>
+            <toolitem action="DelEvent"/>
+            <separator />
             <toolitem action="Back"/>
             <toolitem action="Forward"/>
             <toolitem action="GoToToday"/>
             <toolitem action="GoToSelected"/>
-            <separator />
-            <toolitem action="NewEvent"/>
-            <toolitem action="DelEvent"/>
         </toolbar>
     </ui>"""
 
