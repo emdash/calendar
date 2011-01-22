@@ -4,6 +4,7 @@ from shapes import left_aligned_text
 import settings
 import cairo
 import pango
+import gtk
 
 class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
 
@@ -25,6 +26,7 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
         self.connect("focus-out-event", self._focus_out_event)
         self.cursor_showing = True
         self.focused = False
+        self.set_proxy(gtk.Entry())
 
     def _focus_in_event(self, item, target, event):
         gobject.timeout_add(500, self._blink_cursor)
@@ -116,15 +118,10 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
         self.draw_text(cr)
 
 if __name__ == "__main__":
-    import gtk
     w = gtk.Window()
     c = goocanvas.Canvas()
     c.set_events(gtk.gdk.ALL_EVENTS_MASK)
 
-    e = gtk.Entry()
-    w.add(e)
-    w.remove(e)
-    
     w.add(c)
     c.set_size_request(320, 240)
     c.set_bounds(0, 0, 320, 240)
@@ -135,7 +132,6 @@ if __name__ == "__main__":
             height = 40,
             text="Hello, world",
             show_frame = False))
-    i.set_proxy(e)
     
     c.get_root_item().add_child(i)
     c.grab_focus(i)
