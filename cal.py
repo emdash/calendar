@@ -74,31 +74,6 @@ class KineticScrollAnimation(Animation):
         if self._velocity == 0:
             self.stop()
 
-class VelocityController(MouseInteraction):
-
-    cmd = None
-
-    def point_in_area(self, point):
-        return DragCalendar.can_do(self.instance, point)
-
-    def observe(self, instance):
-        self.area = goocanvas.Bounds(instance.day_width, 0, instance.width,
-            instance.hour_height)
-        MouseInteraction.observe(self, instance)
-
-    def button_press(self):
-        if self.cmd:
-            self.cmd.flick_stop()
-
-    def drag_start(self):
-        self.cmd = DragCalendar.create_for_point(self.instance, self.abs)
-
-    def move(self):
-        self.cmd.update(self.abs, self.rel, self.event.state & gtk.gdk.SHIFT_MASK)
-
-    def flick(self):
-        self.cmd.flick(self.delta)
-
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     __gtype_name__ = "CalendarBase"
@@ -655,7 +630,7 @@ class CalendarItem(goocanvas.Group):
     def __init__(self, undo, *args, **kwargs):
         goocanvas.Group.__init__(self, *args, **kwargs)
         self.schedule = CalendarBase(parent=self)
-        self.scrolling = VelocityController()
+        self.scrolling = MouseCommandDispatcher(undo, (DragCalendar,))
         self.scrolling.observe(self.schedule)
         self.dispatcher = MouseCommandDispatcher(
             undo,
