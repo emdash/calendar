@@ -70,10 +70,12 @@ class MouseCommandDispatcher(MouseInteraction):
         self.commands = commands
 
     def drag_start(self):
-        for command in self.commands:
-            self.command = command.create_for_point(self.instance, self.abs)
-            if self.command:
-                break
+        self.command = self.find_command(self.commands)
+    
+    def find_command(self, commands):
+        for command in commands:
+            ret = command.create_for_point(self.instance, self.abs)
+            if ret: return ret
 
     def move(self):
         if self.command:
