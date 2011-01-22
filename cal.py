@@ -23,6 +23,7 @@
 import gtk
 import pango
 import pangocairo
+import cairo
 import goocanvas
 import gobject
 import datetime
@@ -31,7 +32,7 @@ from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction
-from editable_text_item import EditableTextItem
+from editable_text_item import TextInput
 import settings
 import shapes
 import os
@@ -162,10 +163,19 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.events = {}
         self.selected = None
         self.font_desc = pango.FontDescription("Sans 8")
-        self.editable_text = EditableTextItem(show_frame=False)
+        self.cursor_showing = True
+        self.ti = TextInput(self.text_changed_cb)
+        self.ti.observe(self)
+        gobject.timeout_add(500, self._blink_cursor)
+
+    def _blink_cursor(self):
+        if not self.editing:
+            return True
+        self.cursor_showing = not self.cursor_showing
+        self.changed(False)
+        return True
 
     def model_changed(self):
-        self.update_editor()
         self.changed(False)
 
     def get_date(self, i):
@@ -211,7 +221,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def do_notify(self, something, something_else):
         #self.day_width = self.width / 8
         self.changed(True)
-        self.update_editor()
 
     def do_simple_is_item_at(self, x, y, cr, pointer_event):
         if not (self.x <= x <= (self.x + self.width)):
@@ -365,6 +374,27 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.draw_hour_header(cr, i)
 
         cr.restore()
+            
+    def get_cursor_pos(self, lyt):
+        return [pango.units_to_double(x)
+                for x in
+                lyt.get_cursor_pos(self.ti.get_cursor_pos())[0]]
+
+    def draw_cursor(self, cr, lyt, tx, ty, width, height):
+        if not self.cursor_showing:
+            return
+
+        cr.save()
+        cr.rectangle(tx, ty, width, height)
+        cr.clip()
+        cr.set_line_width(1)
+        cr.set_source_rgba(0, 0, 0, 1)
+        cr.set_antialias(cairo.ANTIALIAS_NONE)
+        x, y, width, height = self.get_cursor_pos(lyt)
+        cr.move_to(tx + x + 2, ty + y)
+        cr.line_to(tx + x + 2, ty + y + height)
+        cr.stroke()
+        cr.restore()
 
     def draw_event(self, cr, event, day):
         start = event.start.hour + (event.start.minute / 60.0)
@@ -380,11 +410,14 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.set_source(settings.default_event_bg_color)
         cr.fill_preserve()
 
-        if event != self.selected:
-            shapes.left_aligned_text(cr, event.description,
-                                     x + 2, y,
-                                     self.day_width - 4, height,
-                                     settings.default_event_text_color)
+        lyt = shapes.left_aligned_text(cr, event.description,
+                                       x + 2, y,
+                                       self.day_width - 4, height,
+                                       settings.default_event_text_color)
+
+        if event == self.selected:
+            self.draw_cursor(cr, lyt, x + 2, y, self.day_width - 4, height)
+
         self.events[event] = (x, y, self.day_width, height)
 
     def draw_events(self, cr):
@@ -473,40 +506,25 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.select_event(self.point_to_event(x, y))
 
     def select_event(self, event):
-        print "got here", event
         self.configure_editor(event)
         self.selected = event
-        self.update_editor()
         self.changed(False)
 
     def configure_editor(self, event):
-        # save any existing text
-        if self.selected and (event != self.selected):
-            self.selected.description = self.editable_text.text
-
         # add the canas item if it's not already visible
-        if (not self.selected) and event:
-            self.get_parent().add_child(self.editable_text)
-            self.editing = True
-            
         if event:
-            print "got here"
-            self.get_canvas().grab_focus(self.editable_text)
-            self.editable_text.text = event.description
+            self.get_canvas().grab_focus(self)
+            self.ti.set_text(event.description)
+            self.editing = True
         else:
             self.editing = False
-            self.editable_text.remove()
 
-    def update_editor(self):
-        if not (self.editing and self.selected):
+    def text_changed_cb(self):
+        if not self.editing:
             return
-        
-        event = self.selected
-        x, y = self.datetime_to_point(event.start)
-        self.editable_text.props.x = x
-        self.editable_text.props.y = y
-        self.editable_text.props.width = self.day_width
-        self.editable_text.props.height = self.hour_height * event.get_duration().seconds / 60 / 60
+
+        self.selected.description = self.ti.get_text()
+        self.changed(False)
 
     def get_schedule(self, date):
         # test schedule
