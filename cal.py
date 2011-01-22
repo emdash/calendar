@@ -61,16 +61,17 @@ def quantize(x, modulus):
 
 class MouseCommandDispatcher(MouseInteraction):
 
-    def __init__(self, undo, commands):
+    def __init__(self, undo, drag_commands, click_commands=()):
         self.selected = None
         self.item = None
         self.undo = undo
         self.mode = None
         self.command = None
-        self.commands = commands
+        self.drag_commands = drag_commands
+        self.click_commands = click_commands
 
     def drag_start(self):
-        self.command = self.find_command(self.commands)
+        self.command = self.find_command(self.drag_commands)
     
     def find_command(self, commands):
         for command in commands:
@@ -88,9 +89,10 @@ class MouseCommandDispatcher(MouseInteraction):
         self.command = None
 
     def click(self):
-        cmd = SelectPoint(self.instance, *self.abs)
-        cmd.do()
-        self.undo.commit(cmd)
+        cmd = self.find_command(self.click_commands)
+        if cmd:
+            cmd.do()
+            self.undo.commit(cmd)
 
 class KineticScrollAnimation(Animation):
 
@@ -533,6 +535,10 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
 class SelectPoint(Command):
 
+    @classmethod
+    def create_for_point(cls, instance, point):
+        return cls(instance, *point)
+
     def __init__(self, instance, x, y):
         self.instance = instance
         self.point = x, y
@@ -682,11 +688,13 @@ class CalendarItem(goocanvas.Group):
         self.schedule = CalendarBase(parent=self)
         self.scrolling = VelocityController()
         self.scrolling.observe(self.schedule)
-        self.dispatcher = MouseCommandDispatcher(undo,
-                                  (SetEventStart,
-                                   SetEventEnd,
-                                   MoveEvent,
-                                   SelectArea))
+        self.dispatcher = MouseCommandDispatcher(
+            undo,
+            drag_commands = (SetEventStart,
+                              SetEventEnd,
+                              MoveEvent,
+                              SelectArea),
+            click_commands = (SelectPoint,))
         self.dispatcher.observe(self.schedule)
 
 class NewEvent(MenuCommand):
