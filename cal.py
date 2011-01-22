@@ -523,7 +523,7 @@ class SelectPoint(Command):
         return True
 
     def undo(self):
-        self.instance.selected = self.selected
+        self.instance.select_event(self.selected)
         self.instance.selected_start = self.selected_start
         self.instance.selected_end = self.selected_end
 
@@ -557,7 +557,7 @@ class SelectArea(MouseCommand):
         return True
 
     def undo(self):
-        self.instance.selected = self.selected
+        self.instance.select_event(self.selected)
         self.instance.selected_start = self.selected_start
         self.instance.selected_end = self.selected_end
 
@@ -662,7 +662,7 @@ class NewEvent(MenuCommand):
         self.app.model.add_event(self.event)
         self.app.schedule.selected_start = None
         self.app.schedule.selected_end = None
-        self.app.schedule.selected = self.event
+        self.app.schedule.select_event(self.event)
         return True
 
     def undo(self):
@@ -684,12 +684,12 @@ class DelEvent(MenuCommand):
 
     def do(self):
         self.app.model.del_event(self.event)
-        self.app.schedule.selected = None
+        self.app.schedule.select_event(None)
         return True
 
     def undo(self):
         self.app.model.add_event(self.event)
-        self.app.schedule.selected = self.event
+        self.app.schedule.select_event(self.event)
         return True
 
 class App(object):
