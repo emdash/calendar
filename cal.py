@@ -59,15 +59,15 @@ import os
 def quantize(x, modulus):
     return (x // modulus) * modulus
 
-class Selector(MouseInteraction):
+class MouseCommandDispatcher(MouseInteraction):
 
-    def __init__(self, undo):
+    def __init__(self, undo, commands):
         self.selected = None
         self.item = None
         self.undo = undo
         self.mode = None
         self.command = None
-        self.commands = (SetEventStart, SetEventEnd, MoveEvent, SelectArea)
+        self.commands = commands
 
     def drag_start(self):
         for command in self.commands:
@@ -683,8 +683,12 @@ class CalendarItem(goocanvas.Group):
         self.schedule = CalendarBase(parent=self)
         self.scrolling = VelocityController()
         self.scrolling.observe(self.schedule)
-        self.selection = Selector(undo)
-        self.selection.observe(self.schedule)
+        self.dispatcher = MouseCommandDispatcher(undo,
+                                  (SetEventStart,
+                                   SetEventEnd,
+                                   MoveEvent,
+                                   SelectArea))
+        self.dispatcher.observe(self.schedule)
 
 class NewEvent(MenuCommand):
 
