@@ -447,7 +447,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.changed(False)
 
     def configure_editor(self, event):
-        # add the canas item if it's not already visible
         if event:
             self.get_canvas().grab_focus(self)
             self.ti.set_text(event.description)
@@ -463,8 +462,25 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.changed(False)
 
     def get_schedule(self, date):
-        # test schedule
         return self.model.get_events(date)
+
+class CalendarItem(goocanvas.Group):
+
+    __gtype_name__ = "CalendarItem"
+
+    def __init__(self, undo, history, *args, **kwargs):
+        goocanvas.Group.__init__(self, *args, **kwargs)
+        self.schedule = CalendarBase(parent=self)
+        self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
+        self.scrolling.observe(self.schedule)
+        self.dispatcher = MouseCommandDispatcher(
+            undo,
+            drag_commands = (SetEventStart,
+                              SetEventEnd,
+                              MoveEvent,
+                              SelectArea),
+            click_commands = (SelectPoint,))
+        self.dispatcher.observe(self.schedule)
 
 class SelectPoint(Command):
 
@@ -626,24 +642,6 @@ class DragCalendar(MouseCommand):
 
     def _upate_pos(self):
         self.flick_pos = self.instance.date
-
-class CalendarItem(goocanvas.Group):
-
-    __gtype_name__ = "CalendarItem"
-
-    def __init__(self, undo, history, *args, **kwargs):
-        goocanvas.Group.__init__(self, *args, **kwargs)
-        self.schedule = CalendarBase(parent=self)
-        self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
-        self.scrolling.observe(self.schedule)
-        self.dispatcher = MouseCommandDispatcher(
-            undo,
-            drag_commands = (SetEventStart,
-                              SetEventEnd,
-                              MoveEvent,
-                              SelectArea),
-            click_commands = (SelectPoint,))
-        self.dispatcher.observe(self.schedule)
 
 class NewEvent(MenuCommand):
 
