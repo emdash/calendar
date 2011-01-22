@@ -111,7 +111,7 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
 
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
-        cr.rectangle(self.x - 1, self.y - 1, self.width + 2, self.height + 2)
+        cr.rectangle(self.x, self.y, self.width, self.height)
         cr.set_source_rgba(0, 0, 0, 1)
         cr.clip_preserve()
         self.draw_bounding_rectangle(cr)
