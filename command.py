@@ -84,13 +84,19 @@ class MenuCommand(Command):
 
 class UndoStack(object):
 
-    def __init__(self):
+    def __init__(self, undo_action=None, redo_action=None):
         self.undo_stack = []
         self.redo_stack = []
-        self.undo_action = gtk.Action("Undo", None, None, gtk.STOCK_UNDO)
+        if not undo_action:
+            self.undo_action = gtk.Action("Undo", None, None, gtk.STOCK_UNDO)
+        else:
+            self.undo_action = undo_action
         self.undo_action.set_sensitive(False)
         self.undo_action.connect("activate", self.undo)
-        self.redo_action = gtk.Action("Redo", None, None, gtk.STOCK_REDO)
+        if not redo_action:
+            self.redo_action = gtk.Action("Redo", None, None, gtk.STOCK_REDO)
+        else:
+            self.redo_action = redo_action
         self.redo_action.set_sensitive(False)
         self.redo_action.connect("activate", self.redo)
 
