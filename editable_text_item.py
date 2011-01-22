@@ -64,6 +64,8 @@ class EditableTextItem(goocanvas.ItemSimple, goocanvas.Item):
         self.text = entry.get_text()
 
     def do_notify(self, unused, pspec):
+        if pspec.name == "text":
+            self.proxy.set_text(self.text)
         self.changed(True)
 
     def do_simple_is_item_at(self, x, y, cr, pointer_event):
