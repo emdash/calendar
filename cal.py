@@ -608,20 +608,28 @@ class DragCalendar(MouseCommand):
         self.mdown = abs
         self.instance = instance
         self.pos = instance.date
+        self.flick_pos = None
 
     def do(self):
-        self.instance.date = self.pos - (self.rel[0] / self.instance.day_width)
+        if self.flick_pos is None:
+            self.instance.date = self.pos - (self.rel[0] / self.instance.day_width)
+        else:
+            self.instance.date = self.flick_pos
 
     def undo(self):
         self.instance.date = self.pos
 
     def flick_start(self):
-        self.scroller = KineticScrollAnimation(30)
+        self.scroller = KineticScrollAnimation(30, finished_cb=self._upate_pos)
         self.scroller.observe(self.instance)
         self.scroller.flick(self.flick_velocity[0] / self.instance.day_width)
 
     def flick_stop(self):
         self.scroller.stop()
+
+    def _upate_pos(self):
+        print "got here"
+        self.flick_pos = self.instance.date
         
 class CalendarItem(goocanvas.Group):
 
