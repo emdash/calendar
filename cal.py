@@ -43,7 +43,6 @@ import os
 #TODO: sync with facebook calendar
 #TODO: sync with evolution ??
 #TODO: message area (gtk-info bar?)
-#TODO: go to today
 #TODO: go to next {week, month}
 #TODO: go to selected
 #TODO: make calendar view "roll" so that sunday is always on the left
@@ -628,7 +627,7 @@ class DragCalendar(MouseCommand):
 
     def _upate_pos(self):
         self.flick_pos = self.instance.date
-        
+
 class CalendarItem(goocanvas.Group):
 
     __gtype_name__ = "CalendarItem"
@@ -697,6 +696,25 @@ class DelEvent(MenuCommand):
         self.app.schedule.select_event(self.event)
         return True
 
+class GoToToday(MenuCommand):
+
+    label = _("Today")
+    tooltip = _("Scroll to current day")
+
+    @classmethod
+    def can_do(cls, app):
+        return True
+
+    def configure(self):
+        self.today = datetime.datetime.today().toordinal()
+        self.date = self.app.schedule.date
+
+    def do(self):
+        self.app.schedule.date = self.today
+
+    def undo(self):
+        self.ap.schedule.date = self.date
+
 class App(object):
 
     ui = """
@@ -707,6 +725,7 @@ class App(object):
             <separator />
             <toolitem action="Back"/>
             <toolitem action="Forward"/>
+            <toolitem action="GoToToday"/>
             <separator />
             <toolitem action="NewEvent"/>
             <toolitem action="DelEvent"/>
