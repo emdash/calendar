@@ -75,9 +75,6 @@ class MouseCommandDispatcher(MouseInteraction):
             if self.command:
                 break
 
-        handle = self.instance.point_in_handle(*self.abs)
-        self.item = self.instance.point_to_event(*self.abs)
-
     def move(self):
         if self.command:
             shift = not self.event.get_state() & gtk.gdk.SHIFT_MASK
