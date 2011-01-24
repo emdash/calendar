@@ -25,10 +25,16 @@ import pangocairo
 import pango
 import settings
 
+def subpath(func):
+    def subpath_impl(cr, *args):
+        cr.save()
+        func(cr, *args)
+        cr.restore()
+    return subpath_impl
+
 def text_function(func):
     
     def draw_pango_text(cr, text, x, y, width, height, color):
-        cr.save()
         cr.rectangle(x, y, width, height)
         cr.clip()
         cr.set_source(color)
@@ -40,12 +46,9 @@ def text_function(func):
         lyt.set_wrap(pango.WRAP_WORD_CHAR)
         func(cr, lyt, x, y, width, height)
         pcr.show_layout(lyt)
-        cr.restore()
         return lyt
-    draw_pango_text.func_name = func.func_name
-    draw_pango_text.__name__ = func.__name__
 
-    return draw_pango_text
+    return subpath(draw_pango_text)
 
 @text_function
 def centered_text(cr, lyt, x, y, width, height):
@@ -57,8 +60,8 @@ def centered_text(cr, lyt, x, y, width, height):
 def left_aligned_text(cr, lyt, x, y, width, height):
     cr.move_to(x, y)
 
+@subpath
 def text_above(cr, text, x, y, width):
-    cr.save()
     tw, th = cr.text_extents(text)[2:4]
     tw = min(width, tw)
     th = th
@@ -67,10 +70,9 @@ def text_above(cr, text, x, y, width):
     cr.move_to (x + (width / 2) - tw / 2,
                 y)
     cr.show_text(text)
-    cr.restore()
-        
+
+@subpath
 def text_below(cr, text, x, y, width):
-    cr.save()
     tw, th = cr.text_extents(text)[2:4]
     tw = min(width, tw)
     th = th
@@ -81,20 +83,18 @@ def text_below(cr, text, x, y, width):
     cr.show_text(text)
     cr.restore()
 
+@subpath
 def filled_box(cr, x, y, width, height, fill, stroke):
-    cr.save()
     cr.rectangle(x, y, width, height)
     cr.set_source(fill)
     cr.fill_preserve()
     cr.set_source(stroke)
     cr.stroke()
-    cr.restore()
-    
+
+@subpath
 def labeled_box(cr, x, y, text, width, height, bgcolor,
                 stroke_color, text_color):
-    cr.save()
     filled_box(cr, x, y, width, height,
                bgcolor, stroke_color)
     cr.set_source(text_color)
     centered_text(cr, text, x, y, width, height, text_color)
-    cr.restore()
