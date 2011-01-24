@@ -28,9 +28,18 @@ import settings
 def subpath(func):
     def subpath_impl(cr, *args):
         cr.save()
-        func(cr, *args)
+        ret = func(cr, *args)
         cr.restore()
+        return ret
     return subpath_impl
+
+def create_layout(pcr, text, width):
+    lyt = pcr.create_layout()
+    lyt.set_font_description(settings.default_font)
+    lyt.set_text(text)
+    lyt.set_width(pango.units_from_double(width))
+    lyt.set_wrap(pango.WRAP_WORD_CHAR)
+    return lyt
 
 def text_function(func):
     
@@ -39,11 +48,7 @@ def text_function(func):
         cr.clip()
         cr.set_source(color)
         pcr = pangocairo.CairoContext(cr)
-        lyt = pcr.create_layout()
-        lyt.set_font_description(settings.default_font)
-        lyt.set_text(text)
-        lyt.set_width(pango.units_from_double(width))
-        lyt.set_wrap(pango.WRAP_WORD_CHAR)
+        lyt = create_layout(pcr, text, width)
         func(cr, lyt, x, y, width, height)
         pcr.show_layout(lyt)
         return lyt
