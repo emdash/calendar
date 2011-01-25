@@ -147,9 +147,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             
         return None
 
+    def area_from_start_end(self, start, end):
+        x1, y1 = self.datetime_to_point(start)
+        x2, y2 = self.datetime_to_point(end)
+        return shapes.Area(x1, y1, self.day_width, y2 - y1)
+
     def point_to_event(self, x, y):
-        for event, (ex, ey, width, height) in self.events.iteritems ():
-            if (ex <= x <= ex + width) and (ey <= y <= ey + height):
+        point = (x,y)
+        for event, area in self.events.iteritems ():
+            if area.contains_point(point):
                 return event
 
         return None
@@ -175,7 +181,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         
     def selection_handles(self, cr):
 
-        area = shapes.Area(*self.events[self.selected]).shrink(2, 0)
+        area = self.events[self.selected]
         radius = 10
 
         top = area.above(2, radius)
@@ -288,16 +294,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
 
     def draw_event(self, cr, event, day):
-        start = event.start.hour + (event.start.minute / 60.0)
-        duration = event.get_duration().seconds / 60.0/ 60.0
-
-        x = self.get_week_pixel_offset() + day * self.day_width
-        y = self.y_scroll_offset + start * self.hour_height +\
-            self.hour_height
-
-        height = duration * self.hour_height
-
-        area = shapes.Area(x, y, self.day_width, height).shrink(2, 0)
+        area = self.area_from_start_end(event.start, event.end).shrink(2, 0)
         shapes.filled_box(cr, area, settings.default_event_bg_color)
 
         if (event == self.selected) and (self.cursor_showing):
@@ -309,7 +306,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                                        settings.default_event_text_color,
                                        cursor_pos)
            
-        self.events[event] = (x, y, self.day_width, height)
+        self.events[event] = area
 
     def draw_events(self, cr):
         self.events = {}
