@@ -25,6 +25,26 @@ import pangocairo
 import pango
 import settings
 
+class Area(object):
+
+    x = 0
+    y = 0
+    width = 0
+    height = 0
+    fill_color = None
+    stroke_color = None
+    center = (0, 0)
+
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.bounds = (self.x, self.y,
+                       self.x + self.width, self.y + self.height)
+        self.center = (self.x + (self.width / 2),
+                       self.y + (self.height / 2))
+
 def subpath(func):
     def subpath_impl(cr, *args):
         cr.save()
@@ -103,3 +123,52 @@ def labeled_box(cr, x, y, text, width, height, bgcolor,
                bgcolor, stroke_color)
     cr.set_source(text_color)
     centered_text(cr, text, x, y, width, height, text_color)
+
+def rect_to_bounds(x, y, width, height):
+    return (x, y, x + width, y + height)
+
+import math
+
+@subpath
+def upward_tab(cr, x, y, width, radius):
+    x1, y1, x2, y2 = rect_to_bounds(x, y, width, radius)
+    cr.move_to(x1, y2)
+    cr.new_sub_path()
+    cr.arc(x1 + radius, y2, radius, math.pi, 1.5 * math.pi)
+    cr.line_to(x2 - radius, y1)
+    cr.new_sub_path()
+    cr.arc(x2 - radius, y2, radius, 1.5 * math.pi, 0)
+    cr.line_to(x1, y2)
+    cr.set_source(settings.handle_bg_color)
+    cr.fill()
+
+@subpath
+def downward_tab(cr, x, y, width, radius):
+    x1, y1, x2, y2 = rect_to_bounds(x, y, width, radius)
+    cr.move_to(x2, y1)
+    cr.new_sub_path()
+    cr.arc(x2 - radius, y1, radius, 0, 0.5 * math.pi)
+    cr.line_to(x1 + radius, y2)
+    cr.new_sub_path()
+    cr.arc(x1 + radius, y1, radius, 0.5 * math.pi, math.pi)
+    cr.line_to(x2, y1)
+    cr.set_source(settings.handle_bg_color)
+    cr.fill()
+
+@subpath
+def upward_triangle(cr, x, y, width, height):
+    cr.move_to(x + (width / 2), y)
+    cr.line_to(x + width, y + height)
+    cr.line_to(x, y + height)
+    cr.line_to(x + (width / 2), y)
+    cr.set_source(settings.handle_arrow_color)
+    cr.fill()
+
+@subpath
+def downward_triangle(cr, x, y, width, height):
+    cr.move_to(x, y)
+    cr.line_to(x + width, y)
+    cr.line_to(x + (width / 2), y + height)
+    cr.line_to(x, y)
+    cr.set_source(settings.handle_arrow_color)
+    cr.fill()

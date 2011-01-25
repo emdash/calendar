@@ -174,45 +174,20 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.x + self.width, self.y + self.height)
         
     def selection_handles(self, cr):
-        if (not self.selected) or (not self.selected in self.events):
-            return
 
         (x, y, width, height) = self.events[self.selected]
         radius = 10
-        cr.save()
-        cr.set_source(settings.handle_bg_color)
         x1, y1 = (x + 2, y - 2)
         x2, y2 = (x + width - 2, y + height + 2)
 
-        cr.move_to(x1, y1)
-        cr.new_sub_path()
-        cr.arc(x1 + radius, y1, radius, math.pi, 1.5 * math.pi)
-        cr.line_to(x2 - radius, y1 - radius)
-        cr.new_sub_path()
-        cr.arc(x2 - radius, y1, radius, 1.5 * math.pi, 0)
-        cr.line_to(x1, y1)
-
-        cr.move_to(x2, y2)
-        cr.new_sub_path()
-        cr.arc(x2 - radius, y2, radius, 0, 0.5 * math.pi)
-        cr.line_to(x1 + radius, y2 + radius)
-        cr.new_sub_path()
-        cr.arc(x1 + radius, y2, radius, 0.5 * math.pi, math.pi)
-        cr.line_to(x2, y2)
-        cr.fill()
-
+        shapes.upward_tab(cr, x + 2, y - radius - 2, width - 4, radius)
+        shapes.downward_tab(cr, x + 2, y + height + 2, width - 4, radius)
         cr.set_source(settings.handle_arrow_color)
-        
-        cr.move_to (x1 + width / 2, y1 - radius + 1)
-        cr.rel_line_to (-3, radius - 2)
-        cr.rel_line_to (6, 0)
-        cr.move_to (x1 + width / 2, y1 - radius + 1)
 
-        cr.move_to (x1 + width / 2, y2 + radius - 1)
-        cr.rel_line_to (-3, -radius + 2)
-        cr.rel_line_to (6, 0)
-        cr.move_to (x1 + width / 2, y2 + radius - 1)
-        cr.fill()
+        shapes.upward_triangle(cr, (x + (width / 2) - radius / 2),
+                               y - radius - 1, 6, radius - 2)
+        shapes.downward_triangle(cr, (x + (width / 2) - radius /2),
+                                 y + height + 2, 6, radius - 2)
 
         cr.restore()
         self.handle_locations = (x1, y1, x2, y2)
@@ -267,7 +242,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             bgcolor = settings.weekday_bg_color
         else:
             bgcolor = settings.weekend_bg_color
-            
+
         shapes.labeled_box(
             cr, x, y,
             date.strftime("%a\n%x"),
@@ -424,7 +399,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                      self.width - self.day_width, self.height - self.hour_height)
         cr.clip()
         self.draw_marquee(cr)
-        self.selection_handles (cr)
+        if (self.selected) and (self.selected in self.events):
+            self.selection_handles (cr)
         cr.restore()
         
         self.draw_top_left_corner (cr)
