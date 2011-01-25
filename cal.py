@@ -175,32 +175,30 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         
     def selection_handles(self, cr):
 
-        (x, y, width, height) = self.events[self.selected]
+        area = shapes.Area(*self.events[self.selected]).shrink(2, 0)
         radius = 10
-        x1, y1 = (x + 2, y - 2)
-        x2, y2 = (x + width - 2, y + height + 2)
 
-        shapes.upward_tab(cr, x + 2, y - radius - 2, width - 4, radius)
-        shapes.downward_tab(cr, x + 2, y + height + 2, width - 4, radius)
+        top = area.above(2, radius)
+        bottom = area.below(2, radius)
+
+        shapes.upward_tab(cr, top)
+        shapes.downward_tab(cr, bottom)
         cr.set_source(settings.handle_arrow_color)
 
-        shapes.upward_triangle(cr, (x + (width / 2) - radius / 2),
-                               y - radius - 1, 6, radius - 2)
-        shapes.downward_triangle(cr, (x + (width / 2) - radius /2),
-                                 y + height + 2, 6, radius - 2)
-
-        cr.restore()
-        self.handle_locations = (x1, y1, x2, y2)
+        shapes.upward_triangle(cr, top.scale(0.1, 0.8))
+        shapes.downward_triangle(cr, bottom.scale(0.1, 0.8))
+        self.handle_locations = top, bottom
 
     def point_in_handle (self, x, y):
         if not self.handle_locations:
             return 0
 
-        x1, y1, x2, y2 = self.handle_locations
+        top, bottom = self.handle_locations
+        point = (x, y)
 
-        if (x1 + 2 <= x <= x2 + 2) and (y1 - 10 <= y <= y1 + 4):
+        if top.contains_point(point):
             return 1
-        if (x1 + 2 <= x <= x2 + 4) and (y2 - 4 <= y <= y2 + 10):
+        if bottom.contains_point(point):
             return 2
         return 0
 
@@ -243,6 +241,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         else:
             bgcolor = settings.weekend_bg_color
 
+            
         shapes.labeled_box(
             cr, x, y,
             date.strftime("%a\n%x"),
