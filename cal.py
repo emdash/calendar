@@ -241,12 +241,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         else:
             bgcolor = settings.weekend_bg_color
 
-            
+        area = shapes.Area(x, y, self.day_width, self.hour_height)
+
         shapes.labeled_box(
-            cr, x, y,
+            cr,
+            area,
             date.strftime("%a\n%x"),
-            self.day_width,
-            self.hour_height,
             bgcolor,
             settings.heading_outline_color,
             settings.text_color)
@@ -263,13 +263,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
         
     def draw_hour_header(self, cr, hour):
+        area = shapes.Area(0,
+                           (hour + 1) * self.hour_height + self.y_scroll_offset,
+                           self.day_width,
+                           self.hour_height)
+        
         shapes.labeled_box(
             cr,
-            0,
-            (hour + 1) * self.hour_height + self.y_scroll_offset,
+            area,
             "%2d:00" % hour,
-            self.day_width,
-            self.hour_height,
             settings.hour_heading_color,
             settings.heading_outline_color,
             settings.text_color)

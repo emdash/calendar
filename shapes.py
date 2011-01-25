@@ -141,20 +141,17 @@ def text_below(cr, text, x, y, width):
     cr.restore()
 
 @subpath
-def filled_box(cr, x, y, width, height, fill, stroke):
-    cr.rectangle(x, y, width, height)
+def filled_box(cr, area, fill, stroke):
+    cr.rectangle(*area.bounds)
     cr.set_source(fill)
     cr.fill_preserve()
     cr.set_source(stroke)
     cr.stroke()
 
 @subpath
-def labeled_box(cr, x, y, text, width, height, bgcolor,
-                stroke_color, text_color):
-    filled_box(cr, x, y, width, height,
-               bgcolor, stroke_color)
-    cr.set_source(text_color)
-    centered_text(cr, text, x, y, width, height, text_color)
+def labeled_box(cr, area, text, bgcolor, stroke_color, text_color):
+    filled_box(cr, area, bgcolor, stroke_color)
+    centered_text(cr, text, area.x, area.y, area.width, area.height, text_color)
 
 def rect_to_bounds(x, y, width, height):
     return (x, y, x + width, y + height)
