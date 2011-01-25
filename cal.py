@@ -148,9 +148,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return None
 
     def area_from_start_end(self, start, end):
-        x1, y1 = self.datetime_to_point(start)
-        x2, y2 = self.datetime_to_point(end)
-        return shapes.Area(x1, y1, self.day_width, y2 - y1)
+        start = self.datetime_to_point(start)
+        end = self.datetime_to_point(end)
+        if start and end:
+            return shapes.Area(start[0], start[1], self.day_width, end[1] - start[1])
+        else:
+            return None
 
     def point_to_event(self, x, y):
         point = (x,y)
@@ -316,31 +319,29 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
 
     def draw_marquee(self, cr):
-        if self.selected_start and self.selected_end:
-            start = self.datetime_to_point(self.selected_start)
-            end = self.datetime_to_point(self.selected_end)
-            if start and end:
-                x1, y1 = start
-                x2, y2 = end
-                cr.set_source(settings.marquee_fill_color)
-                height = y2 - y1
-                cr.rectangle(x1, y1, self.day_width, height)
-                cr.fill()
-                cr.set_source(settings.marquee_text_color)
+        if not (self.selected_start and self.selected_end):
+            return
+        
+        area = self.area_from_start_end(self.selected_start,
+                                        self.selected_end).shrink(2, 0)
 
-                text = self.selected_start.strftime ("%X")
-                shapes.text_above(cr, text, x1, y1 - 2, self.day_width)
+        if not area: return
 
-                text = self.selected_end.strftime ("%X")
-                shapes.text_below(cr, text, x1, y1 + height + 2, self.day_width)
+        shapes.filled_box(cr, area, settings.marquee_fill_color)
+        cr.set_source(settings.marquee_text_color)
 
-                duration = self.selected_end - self.selected_start
-                m = int (duration.seconds / 60) % 60
-                h = int (duration.seconds / 60 / 60)
+        text = self.selected_start.strftime ("%X")
+        shapes.text_above(cr, text, area.x, area.y - 2, area.width)
+            
+        text = self.selected_end.strftime ("%X")
+        shapes.text_below(cr, text, area.x, area.y2 + 2, area.width)
 
-                text = "%dh %dm" % (h, m)
-                area = shapes.Area(x1, y1, self.day_width, height)
-                shapes.centered_text(cr, area, text, settings.text_color)
+        duration = self.selected_end - self.selected_start
+        m = int (duration.seconds / 60) % 60
+        h = int (duration.seconds / 60 / 60)
+
+        text = "%dh %dm" % (h, m)
+        shapes.centered_text(cr, area, text, settings.text_color)
 
     def draw_top_left_corner(self, cr):
         cr.set_source(settings.corner_bg_color)
