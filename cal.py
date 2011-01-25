@@ -317,10 +317,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.hour_height
 
         height = duration * self.hour_height
-                
-        cr.rectangle(x + 2, y, self.day_width - 4, height)
-        cr.set_source(settings.default_event_bg_color)
-        cr.fill_preserve()
+
+        area = shapes.Area(x, y, self.day_width, height).shrink(2, 0)
+        shapes.filled_box(cr, area, settings.default_event_bg_color)
 
         lyt = shapes.left_aligned_text(cr, event.description,
                                        x + 2, y,

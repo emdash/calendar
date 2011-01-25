@@ -140,12 +140,13 @@ def text_below(cr, text, x, y, width):
     cr.show_text(text)
 
 @subpath
-def filled_box(cr, area, fill, stroke):
-    cr.rectangle(*area.bounds)
+def filled_box(cr, area, fill, stroke=None):
+    cr.rectangle(area.x, area.y, area.width, area.height)
     cr.set_source(fill)
     cr.fill_preserve()
-    cr.set_source(stroke)
-    cr.stroke()
+    if stroke:
+        cr.set_source(stroke)
+        cr.stroke()
 
 @subpath
 def labeled_box(cr, area, text, bgcolor, stroke_color, text_color):
