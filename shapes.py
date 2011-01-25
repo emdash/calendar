@@ -138,7 +138,6 @@ def text_below(cr, text, x, y, width):
     cr.move_to (x + (width / 2) - tw / 2,
                 y + th)
     cr.show_text(text)
-    cr.restore()
 
 @subpath
 def filled_box(cr, area, fill, stroke):
