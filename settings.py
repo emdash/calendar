@@ -12,6 +12,7 @@ default_font = pango.FontDescription("Sans 8")
 ## colors
 
 text_color = cairo.SolidPattern(0, 0, 0, .75)
+cursor_color = cairo.SolidPattern(0, 0, 0, 1)
 
 # grid
 grid_line_color = cairo.SolidPattern(1, 1, 1)

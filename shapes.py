@@ -21,6 +21,7 @@
 
 "Cairo convenience routines"
 
+import cairo
 import pangocairo
 import pango
 import settings
@@ -93,29 +94,46 @@ def create_layout(pcr, text, width):
     lyt.set_wrap(pango.WRAP_WORD_CHAR)
     return lyt
 
+def get_cursor_pos(lyt, index):
+    return [pango.units_to_double(x)
+            for x in
+            lyt.get_cursor_pos(index)[0]]
+
+@subpath
+def draw_cursor(cr, lyt, area, index):
+    cr.set_line_width(1)
+    cr.set_source(settings.cursor_color)
+    cr.set_antialias(cairo.ANTIALIAS_NONE)
+    x, y, width, height = get_cursor_pos(lyt, index)
+    cr.move_to(area.x + x + 2, area.y + y)
+    cr.line_to(area.x + x + 2, area.y + y + height)
+    cr.stroke()
+
 def text_function(func):
     
-    def draw_pango_text(cr, text, x, y, width, height, color):
-        cr.rectangle(x, y, width, height)
+    def draw_pango_text(cr, area, text, color, cursor_pos=-1):
+        cr.rectangle(area.x, area.y, area.width, area.height)
         cr.clip()
         cr.set_source(color)
         pcr = pangocairo.CairoContext(cr)
-        lyt = create_layout(pcr, text, width)
-        func(cr, lyt, x, y, width, height)
+        lyt = create_layout(pcr, text, area.width)
+        func(cr, lyt, area)
         pcr.show_layout(lyt)
+        if cursor_pos != -1:
+            draw_cursor(cr, lyt, area, cursor_pos)
         return lyt
 
     return subpath(draw_pango_text)
 
 @text_function
-def centered_text(cr, lyt, x, y, width, height):
+def centered_text(cr, lyt, area):
     lyt.set_alignment(pango.ALIGN_CENTER)
     tw, th = lyt.get_pixel_size()
-    cr.move_to(x, y + height / 2 - th / 2)
+    cr.move_to(area.x, area.center_y - th / 2)
 
 @text_function
-def left_aligned_text(cr, lyt, x, y, width, height):
-    cr.move_to(x, y)
+def left_aligned_text(cr, lyt, area):
+    cr.move_to(area.x, area.y)
 
 @subpath
 def text_above(cr, text, x, y, width):
@@ -151,7 +169,7 @@ def filled_box(cr, area, fill, stroke=None):
 @subpath
 def labeled_box(cr, area, text, bgcolor, stroke_color, text_color):
     filled_box(cr, area, bgcolor, stroke_color)
-    centered_text(cr, text, area.x, area.y, area.width, area.height, text_color)
+    centered_text(cr, area, text, text_color)
 
 def rect_to_bounds(x, y, width, height):
     return (x, y, x + width, y + height)

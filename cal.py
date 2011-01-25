@@ -286,27 +286,6 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.draw_hour_header(cr, i)
 
         cr.restore()
-            
-    def get_cursor_pos(self, lyt):
-        return [pango.units_to_double(x)
-                for x in
-                lyt.get_cursor_pos(self.ti.get_cursor_pos())[0]]
-
-    def draw_cursor(self, cr, lyt, tx, ty, width, height):
-        if not self.cursor_showing:
-            return
-
-        cr.save()
-        cr.rectangle(tx, ty, width, height)
-        cr.clip()
-        cr.set_line_width(1)
-        cr.set_source_rgba(0, 0, 0, 1)
-        cr.set_antialias(cairo.ANTIALIAS_NONE)
-        x, y, width, height = self.get_cursor_pos(lyt)
-        cr.move_to(tx + x + 2, ty + y)
-        cr.line_to(tx + x + 2, ty + y + height)
-        cr.stroke()
-        cr.restore()
 
     def draw_event(self, cr, event, day):
         start = event.start.hour + (event.start.minute / 60.0)
@@ -321,14 +300,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         area = shapes.Area(x, y, self.day_width, height).shrink(2, 0)
         shapes.filled_box(cr, area, settings.default_event_bg_color)
 
-        lyt = shapes.left_aligned_text(cr, event.description,
-                                       x + 2, y,
-                                       self.day_width - 4, height,
-                                       settings.default_event_text_color)
+        if (event == self.selected) and (self.cursor_showing):
+            cursor_pos = self.ti.get_cursor_pos()
+        else:
+            cursor_pos = -1
 
-        if event == self.selected:
-            self.draw_cursor(cr, lyt, x + 2, y, self.day_width - 4, height)
-
+        lyt = shapes.left_aligned_text(cr, area, event.description,
+                                       settings.default_event_text_color,
+                                       cursor_pos)
+           
         self.events[event] = (x, y, self.day_width, height)
 
     def draw_events(self, cr):
@@ -362,7 +342,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
                 h = int (duration.seconds / 60 / 60)
 
                 text = "%dh %dm" % (h, m)
-                shapes.centered_text(cr, text, x1, y1, self.day_width, height, settings.text_color)
+                area = shapes.Area(x1, y1, self.day_width, height)
+                shapes.centered_text(cr, area, text, settings.text_color)
 
     def draw_top_left_corner(self, cr):
         cr.set_source(settings.corner_bg_color)
@@ -372,8 +353,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.stroke()
         
         cr.set_source(settings.text_color)
-        shapes.centered_text(cr, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
-            0, 0, self.day_width, self.hour_height, settings.text_color)
+        area = shapes.Area(0, 0, self.day_width, self.hour_height)
+        shapes.centered_text(cr, area, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
+            settings.text_color)
 
     def draw_comfort_lines(self, cr):
         cr.set_source(settings.comfort_line_color)
