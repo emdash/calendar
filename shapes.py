@@ -78,6 +78,13 @@ class Area(object):
     def below(self, spacing, height):
         return Area(self.x, self.y2 + spacing, self.width, height)
 
+    def empty(self):
+        return self.width and self.height
+
+    @classmethod
+    def from_bounds(self, x1, y1, x2, y2):
+        return Area(x1, y1, (x2 - x1), (y2 - y1))
+
 def subpath(func):
     def subpath_impl(cr, *args):
         cr.save()

@@ -345,15 +345,14 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         shapes.centered_text(cr, area, text, settings.text_color)
 
     def draw_top_left_corner(self, cr):
-        cr.set_source(settings.corner_bg_color)
-        cr.rectangle (self.x, self.y, self.day_width, self.hour_height)
-        cr.fill_preserve()
-        cr.set_source(settings.heading_outline_color)
-        cr.stroke()
-        
-        cr.set_source(settings.text_color)
         area = shapes.Area(0, 0, self.day_width, self.hour_height)
-        shapes.centered_text(cr, area, datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
+
+        shapes.labeled_box(
+            cr,
+            area,
+            datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
+            settings.corner_bg_color,
+            settings.heading_outline_color,
             settings.text_color)
 
     def draw_comfort_lines(self, cr):
