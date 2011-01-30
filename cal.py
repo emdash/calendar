@@ -398,8 +398,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         self.select_event(self.point_to_event(x, y))
 
     def select_event(self, event):
-        self.configure_editor(event)
         self.selected = event
+        self.configure_editor(event)
         self.changed(False)
 
     def configure_editor(self, event):
