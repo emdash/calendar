@@ -45,7 +45,7 @@ class MouseCommandDispatcher(MouseInteraction):
     def flick(self):
         if self.command:
             self.command.flick(self.delta, None,
-                               self.event.state & gtk.gdk.SHIFT_MASK)
+                               not self.event.state & gtk.gdk.SHIFT_MASK)
 
     def click(self):
         cmd = self.find_command(self.click_commands)
