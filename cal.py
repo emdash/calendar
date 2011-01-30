@@ -53,6 +53,7 @@ import os
 #TODO: do something sane when events overlap
 #TODO: clamp values on selector to something sane
 #TODO: specify working day (hide unused hours)
+#TODO: tomboy integration
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
