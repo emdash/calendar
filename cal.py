@@ -448,7 +448,7 @@ class SelectPoint(Command):
         self.instance = instance
         self.point = x, y
         self.selected = self.instance.selected
-        self.selected_start = self.instance.selected_end
+        self.selected_start = self.instance.selected_start
         self.selected_end = self.instance.selected_end
 
     def do(self):
