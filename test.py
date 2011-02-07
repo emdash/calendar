@@ -13,37 +13,37 @@ class TestApp(cal.App):
 class Tester:
     def __init__(self, test_case):
         self.app = TestApp()
-        gobject.timeout_add(1000, run_test_case, test_case(self.app))
+        gobject.timeout_add(1000, self.run_test_case, test_case(self.app))
         self.app.run()
         os.unlink("test.data")
 
-def run_test_case(iterator):
-    print "Tick"
-    
-    try:
-        scheduler = iterator.next()
+    def run_test_case(self, iterator):
+        print "Tick"
+        
+        try:
+            scheduler = iterator.next()
+            
+        except StopIteration:
+            print "Test Case Finished Successfully"
+            self.app.quit()
+            return False
 
-    except StopIteration:
-        print "Test Case Finished Successfully"
-        gtk.main_quit()
+        except Exception, e:
+            print "An error occured"
+            self.app.quit()
+            traceback.print_exc()
+            return False
+
+        scheduler.schedule(self, iterator)
         return False
-
-    except Exception, e:
-        print "An error occured"
-        gtk.main_quit()
-        traceback.print_exc()
-        return False
-
-    scheduler.schedule(iterator)
-    return False
 
 class Sleep(object):
 
     def __init__(self, timeout=1000):
         self.timeout = timeout
         
-    def schedule(self, iterator):
-        gobject.timeout_add(self.timeout, run_test_case, iterator)
+    def schedule(self, tester, iterator):
+        gobject.timeout_add(self.timeout, tester.run_test_case, iterator)
 
 class WaitForSignal(object):
     
@@ -53,12 +53,13 @@ class WaitForSignal(object):
         self.iterator = None
         self.sigid = None
         
-    def schedule(self, iterator):
+    def schedule(self, tester, iterator):
         self.sigid = self.obj.connect(self.signame, self._handler)
         self.iterator = iterator
+        self.tester = tester
         
     def _handler(self, *args):
-        run_test_case(self.iterator)
+        self.tester.run_test_case(self.iterator)
         self.obj.disconnect(self.sigid)
     
 def basic_test(app):
