@@ -752,6 +752,7 @@ class App(object):
 
         w.add(vbox)
         w.show_all()
+        self.window = w
         self.schedule.connect("notify::selected", self.update_actions)
         self.schedule.connect("notify::selected_start", self.update_actions)
         self.schedule.connect("notify::selected_end", self.update_actions)
@@ -778,6 +779,10 @@ class App(object):
         gtk.main()
         self.save()
         gobject.timeout_add(60000, self.save)
+
+    def quit(self):
+        self.window.destroy()
+        gtk.main_quit()
         
     path = os.path.expanduser("~/.calendar_data")
     
