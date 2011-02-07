@@ -119,5 +119,29 @@ def test_new_event(app):
     assert app.schedule.selected.start == s
     assert app.schedule.selected.end == e
 
-for test in [basic_test, test_select_area, test_new_event]:
+def test_select_and_delete_event(app):
+    cmd = cal.SelectArea(app.schedule, (100, 100))
+    cmd.update((100, 100 + app.schedule.hour_height),
+               (0, app.schedule.hour_height))
+
+    s = app.schedule.selected_start
+    e = app.schedule.selected_end
+    
+    cmd = cal.NewEvent(app)
+    cmd.do()
+    yield Sleep()
+
+    assert app.schedule.selected != None
+    event = app.schedule.selected
+
+    cmd = cal.DelEvent(app)
+    cmd.do()
+    assert app.schedule.selected == None
+    cmd.undo()
+    assert app.schedule.selected == event
+
+for test in [basic_test,
+             test_select_area,
+             test_new_event,
+             test_select_and_delete_event]:
     Tester(test)
