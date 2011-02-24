@@ -72,6 +72,10 @@ class KineticScrollAnimation(Animation):
         if self._velocity == 0:
             self.stop()
 
+class DateNotVisible(Exception):
+
+    pass
+
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     __gtype_name__ = "CalendarBase"
@@ -141,23 +145,24 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         return datetime.timedelta(minutes=minute)
 
+    def date_visible(self, dt):
+        return (self.date - 1 <
+                dt.toordinal() <
+                self.date + self.days_visible())
+
     def datetime_to_point(self, dt):
-        if self.date - 1 < dt.toordinal() < self.date + (self.width /
-            self.day_width):
-            return (
-                ((dt.toordinal() - self.date + 1) * self.day_width),
-                (dt.hour + 1 + dt.minute / 60.0)
-                    * self.hour_height + self.y_scroll_offset)
-            
-        return None
+        if not self.date_visible(dt):
+            raise DateNotVisible(dt)
+        
+        return (
+            ((dt.toordinal() - self.date + 1) * self.day_width),
+            (dt.hour + 1 + dt.minute / 60.0)
+            * self.hour_height + self.y_scroll_offset)
 
     def area_from_start_end(self, start, end):
         start = self.datetime_to_point(start)
         end = self.datetime_to_point(end)
-        if start and end:
-            return shapes.Area(start[0], start[1], self.day_width, end[1] - start[1])
-        else:
-            return None
+        return shapes.Area(start[0], start[1], self.day_width, end[1] - start[1])
 
     def point_to_event(self, x, y):
         point = (x,y)
@@ -301,7 +306,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
 
     def draw_event(self, cr, event, day):
-        area = self.area_from_start_end(event.start, event.end).shrink(2, 0)
+        try:
+            area = self.area_from_start_end(event.start, event.end).shrink(2, 0)
+        except DateNotVisible:
+            return
+        
         shapes.filled_box(cr, area, settings.default_event_bg_color)
 
         if (event == self.selected) and (self.cursor_showing):
@@ -325,11 +334,12 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def draw_marquee(self, cr):
         if not (self.selected_start and self.selected_end):
             return
-        
-        area = self.area_from_start_end(self.selected_start,
-                                        self.selected_end).shrink(2, 0)
 
-        if not area: return
+        try:
+            area = self.area_from_start_end(self.selected_start,
+                                            self.selected_end).shrink(2, 0)
+        except DateNotVisible:
+            return
 
         shapes.filled_box(cr, area, settings.marquee_fill_color)
         cr.set_source(settings.marquee_text_color)
