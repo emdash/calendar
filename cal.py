@@ -118,6 +118,9 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
 
+    def days_visible(self):
+        return self.width / self.day_width
+
     def point_to_datetime(self, x, y, snap=True):
         hour = ((y + (- self.y_scroll_offset)- self.hour_height) /
             self.hour_height)
@@ -231,7 +234,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
         x = self.get_week_pixel_offset()
 
-        for i in xrange(0, (self.width / self.day_width) + 1):
+        for i in xrange(0, (self.days_visible()) + 1):
             # draw vertical lines
             x += self.day_width
             cr.move_to (x, self.hour_height)
@@ -267,7 +270,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             self.height)
         cr.clip()
 
-        for i in xrange(0, (self.width / self.day_width) + 1):
+        for i in xrange(0, (self.days_visible()) + 1):
             self.draw_day_header(cr, i)
             
         cr.restore()
@@ -314,7 +317,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def draw_events(self, cr):
         self.events = {}
-        for i in xrange (0, (self.width / self.day_width) + 1):
+        for i in xrange (0, self.days_visible() + 1):
             for evt in self.get_schedule(self.date + i):
                 self.draw_event(cr, evt, i)
         cr.restore()
