@@ -825,6 +825,7 @@ class App(object):
         self.schedule.connect("notify::selected_start", self.update_actions)
         self.schedule.connect("notify::selected_end", self.update_actions)
         self.schedule.connect("notify::height", self.update_scroll_adjustment)
+        self.schedule.connect("notify::scale", self.update_scroll_adjustment)
 
     def update_scroll_pos(self, scrollbar):
         self.schedule.y_scroll_offset = -scrollbar.get_value()
