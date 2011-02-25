@@ -76,6 +76,24 @@ class DateNotVisible(Exception):
 
     pass
 
+def scaled_getter(name):
+    def scaled_getter_impl(self):
+        val = getattr(self, name)
+        return max(val, val / self.scale)
+    return scaled_getter_impl
+
+def scaled_setter(name):
+    def scaled_setter_impl(self, value):
+        setattr(self, name, value)
+    return scaled_setter_impl
+
+def scaled_property(name):
+    name = "_" + name
+    return gobject.property(
+        scaled_getter(name),
+        scaled_setter(name),
+        type=float)
+
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     __gtype_name__ = "CalendarBase"
