@@ -151,9 +151,11 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return datetime.date.fromordinal(int(i))
 
     def days_visible(self):
-        return self.width / self.day_width
+        return int(self.width / self.day_width)
 
     def point_to_datetime(self, x, y, snap=True):
+        x /= self.scale
+        y /= self.scale
         hour = ((y + (- self.y_scroll_offset)- self.hour_height) /
             self.hour_height)
         if snap:
@@ -168,6 +170,8 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return ret + delta
 
     def point_to_timedelta(self, x, y, snap=True):
+        x /= self.scale
+        y /= self.scale
         day = int(x / self.day_width)
         minute = (day * 24 * 60) + quantize(int((y / self.hour_height) * 60), 15)
 
@@ -193,7 +197,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         return shapes.Area(start[0], start[1], self.day_width, end[1] - start[1])
 
     def point_to_event(self, x, y):
-        point = (x,y)
+        point = (x / self.scale, y / self.scale)
         for event, area in self.events.iteritems ():
             if area.contains_point(point):
                 return event
@@ -240,7 +244,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
             return 0
 
         top, bottom = self.handle_locations
-        point = (x, y)
+        point = (x / self.scale, y / self.scale)
 
         if top.contains_point(point):
             return 1
@@ -260,18 +264,19 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
         cr.clip()
 
         cr.set_source(settings.grid_line_color)
-        for i in xrange(1, 25):
+        for i in xrange(1, 26):
             cr.move_to(self.day_width, self.y_scroll_offset + i * self.hour_height)
             cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
             cr.stroke()
 
         x = self.get_week_pixel_offset()
+        max_height = min(self.hour_height * 25 + self.y_scroll_offset, self.height)
 
         for i in xrange(0, (self.days_visible()) + 1):
             # draw vertical lines
             x += self.day_width
             cr.move_to (x, self.hour_height)
-            cr.line_to (x, self.height)
+            cr.line_to (x, max_height)
             cr.stroke()
 
     def draw_day_header(self, cr, nth_day):
@@ -611,8 +616,8 @@ class DragCalendar(MouseCommand):
 
     @classmethod
     def can_do(cls, instance, abs):
-        return (instance.x <= abs[0] <= instance.width and 
-                instance.y <= abs[1] <= instance.hour_height)
+        return (instance.x <= abs[0] / instance.scale <= instance.width and 
+                instance.y <= abs[1] / instance.scale <= instance.hour_height)
 
 
     def __init__(self, instance, abs):
@@ -624,7 +629,8 @@ class DragCalendar(MouseCommand):
 
     def do(self):
         if self.flick_pos is None:
-            self.instance.date = self.pos - (self.rel[0] / self.instance.day_width)
+            self.instance.date = (self.pos - (self.rel[0] / self.instance.scale) /
+                                  self.instance.day_width)
         else:
             self.instance.date = self.flick_pos
 
