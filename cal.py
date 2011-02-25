@@ -45,7 +45,6 @@ import os
 #TODO: message area (gtk-info bar?)
 #TODO: go to next {week, month}
 #TODO: make calendar view "roll" so that sunday is always on the left
-#TODO: zooming support (changes day_width/height size)
 #TODO: change cursors
 #TODO: start writing test cases, we've got too many features already
 #TODO: port away from goocanvas ?
