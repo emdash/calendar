@@ -46,11 +46,9 @@ import os
 #TODO: go to next {week, month}
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: change cursors
-#TODO: start writing test cases, we've got too many features already
 #TODO: port away from goocanvas ?
 #TODO: allow multiple selections
 #TODO: do something sane when events overlap
-#TODO: clamp values on selector to something sane
 #TODO: specify working day (hide unused hours)
 #TODO: tomboy integration
 
