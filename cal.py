@@ -408,6 +408,7 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     def do_simple_paint(self, cr, bounds):
         cr.identity_matrix()
+        cr.scale(self.scale, self.scale)
 
         self.clear_background(cr)
         self.draw_day_headers(cr)
