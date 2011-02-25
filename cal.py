@@ -97,16 +97,26 @@ def scaled_property(name):
 class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
 
     __gtype_name__ = "CalendarBase"
+    
+    scale = gobject.property(type=float, default=1.0)
 
     x = gobject.property(type=int, default=0)
     y = gobject.property(type=int, default=0)
-    width = gobject.property(type=int, default=settings.width)
-    height = gobject.property(type=int, default=settings.height)
-    hour_height = gobject.property(type=int, default=settings.hour_height)
-    day_width = gobject.property(type=int, default=settings.day_width)
+
+    _width = settings.width
+    _height = settings.height
+    _day_width = settings.day_width
+    _y_scroll_offset = 0
+    
+    width = scaled_property("width")
+    height = scaled_property("height")
+    y_scroll_offset = scaled_property("y_scroll_offset")
+    
+    hour_height = gobject.property(type=float, default=settings.hour_height)
+    day_width = gobject.property(type=float, default=settings.day_width)
+    
     date = gobject.property(type=float,
         default=datetime.date.today().toordinal())
-    y_scroll_offset = gobject.property(type=int, default=0)
     selected_start = gobject.property(type=gobject.TYPE_PYOBJECT)
     selected_end = gobject.property(type=gobject.TYPE_PYOBJECT)
     selected = gobject.property(type=gobject.TYPE_PYOBJECT)
