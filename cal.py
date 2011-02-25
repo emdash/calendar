@@ -731,6 +731,24 @@ class GoToSelected(MenuCommand):
 
     def undo(self):
         self.app.schedule.date = self.date
+
+class ZoomIn(MenuCommand):
+
+    label = _("Zoom In")
+    stockid = gtk.STOCK_ZOOM_IN
+    undoable = False
+
+    def do(self):
+        self.app.schedule.scale = min(self.app.schedule.scale + 0.10, 10)
+
+class ZoomOut(MenuCommand):
+
+    label = _("Zoom Out")
+    stockid = gtk.STOCK_ZOOM_OUT
+    undoable = False
+
+    def do(self):
+        self.app.schedule.scale = max(self.app.schedule.scale - 0.10, 0.1)
         
 class App(object):
 
@@ -747,6 +765,8 @@ class App(object):
             <toolitem action="Forward"/>
             <toolitem action="GoToToday"/>
             <toolitem action="GoToSelected"/>
+            <toolitem action="ZoomIn"/>
+            <toolitem action="ZoomOut"/>
         </toolbar>
     </ui>"""
 
