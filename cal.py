@@ -91,9 +91,9 @@ def scaled_property(name):
         scaled_setter(name),
         type=float)
 
-class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
+class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
-    __gtype_name__ = "CalendarBase"
+    __gtype_name__ = "WeekView"
     
     scale = gobject.property(type=float, default=1.0)
 
@@ -464,15 +464,15 @@ class CalendarBase(goocanvas.ItemSimple, goocanvas.Item):
     def get_schedule(self, date):
         return self.model.get_events(date)
 
-class CalendarItem(goocanvas.Group):
+class WeekViewItem(goocanvas.Group):
 
-    __gtype_name__ = "CalendarItem"
+    __gtype_name__ = "WeekViewItem"
 
     def __init__(self, undo, history, *args, **kwargs):
         goocanvas.Group.__init__(self, *args, **kwargs)
-        self.schedule = CalendarBase(parent=self)
+        self.weekview = WeekView(parent=self)
         self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
-        self.scrolling.observe(self.schedule)
+        self.scrolling.observe(self.weekview)
         self.dispatcher = MouseCommandDispatcher(
             undo,
             drag_commands = (SetEventStart,
@@ -480,7 +480,7 @@ class CalendarItem(goocanvas.Group):
                               MoveEvent,
                               SelectArea),
             click_commands = (SelectPoint,))
-        self.dispatcher.observe(self.schedule)
+        self.dispatcher.observe(self.weekview)
 
 class SelectPoint(Command):
 
@@ -652,26 +652,26 @@ class NewEvent(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return app.schedule.selected_start != None and\
-            app.schedule.selected_end != None
+        return app.weekview.selected_start != None and\
+            app.weekview.selected_end != None
 
     def configure(self):
-        start = self.app.schedule.selected_start
-        end = self.app.schedule.selected_end
+        start = self.app.weekview.selected_start
+        end = self.app.weekview.selected_end
         self.event = Event(start, end, "New Event")
 
     def do(self):
         self.app.model.add_event(self.event)
-        self.app.schedule.selected_start = None
-        self.app.schedule.selected_end = None
-        self.app.schedule.select_event(self.event)
+        self.app.weekview.selected_start = None
+        self.app.weekview.selected_end = None
+        self.app.weekview.select_event(self.event)
         return True
 
     def undo(self):
         self.app.model.del_event(self.event)
-        self.app.schedule.selected_start = self.event.start
-        self.app.schedule.selected_end = self.event.end
-        self.app.schedule.selected = None
+        self.app.weekview.selected_start = self.event.start
+        self.app.weekview.selected_end = self.event.end
+        self.app.weekview.selected = None
         return True
 
 class DelEvent(MenuCommand):
@@ -682,19 +682,19 @@ class DelEvent(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return app.schedule.selected != None
+        return app.weekview.selected != None
 
     def configure(self):
-        self.event = self.app.schedule.selected
+        self.event = self.app.weekview.selected
 
     def do(self):
         self.app.model.del_event(self.event)
-        self.app.schedule.select_event(None)
+        self.app.weekview.select_event(None)
         return True
 
     def undo(self):
         self.app.model.add_event(self.event)
-        self.app.schedule.select_event(self.event)
+        self.app.weekview.select_event(self.event)
         return True
 
 class GoToToday(MenuCommand):
@@ -708,10 +708,10 @@ class GoToToday(MenuCommand):
 
     def configure(self):
         self.today = datetime.datetime.today().toordinal()
-        self.date = self.app.schedule.date
+        self.date = self.app.weekview.date
 
     def do(self):
-        self.app.schedule.date = self.today
+        self.app.weekview.date = self.today
 
     def undo(self):
         self.ap.schedule.date = self.date
@@ -723,17 +723,17 @@ class GoToSelected(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return bool(app.schedule.selected)
+        return bool(app.weekview.selected)
 
     def configure(self):
-        self.selected = self.app.schedule.selected
-        self.date = self.app.schedule.date
+        self.selected = self.app.weekview.selected
+        self.date = self.app.weekview.date
 
     def do(self):
-        self.app.schedule.date = self.selected.start.toordinal()
+        self.app.weekview.date = self.selected.start.toordinal()
 
     def undo(self):
-        self.app.schedule.date = self.date
+        self.app.weekview.date = self.date
 
 class ZoomIn(MenuCommand):
 
@@ -742,7 +742,7 @@ class ZoomIn(MenuCommand):
     undoable = False
 
     def do(self):
-        self.app.schedule.scale = min(self.app.schedule.scale + 0.10, 10)
+        self.app.weekview.scale = min(self.app.weekview.scale + 0.10, 10)
 
 class ZoomOut(MenuCommand):
 
@@ -751,7 +751,15 @@ class ZoomOut(MenuCommand):
     undoable = False
 
     def do(self):
-        self.app.schedule.scale = max(self.app.schedule.scale - 0.10, 0.1)
+        self.app.weekview.scale = max(self.app.weekview.scale - 0.10, 0.1)
+
+class SwitchViews(MenuCommand):
+
+    label = _("Month View")
+    undoable = False
+
+    def do(self):
+        self.app.weekview.props.visibility = goocanvas.ITEM_INVISIBLE
         
 class App(object):
 
@@ -768,8 +776,10 @@ class App(object):
             <toolitem action="Forward"/>
             <toolitem action="GoToToday"/>
             <toolitem action="GoToSelected"/>
+            <separator />
             <toolitem action="ZoomIn"/>
             <toolitem action="ZoomOut"/>
+            <toolitem action="SwitchViews"/>
         </toolbar>
     </ui>"""
 
@@ -784,9 +794,9 @@ class App(object):
         vbox = gtk.VBox()
         hbox = gtk.HBox()
         canvas = goocanvas.Canvas()
-        self.calendar_item = CalendarItem(self.undo, self.history)
-        self.schedule = self.calendar_item.schedule
-        self.model = self.schedule.model
+        self.calendar_item = WeekViewItem(self.undo, self.history)
+        self.weekview = self.calendar_item.weekview
+        self.model = self.weekview.model
         canvas.get_root_item().add_child(self.calendar_item)
         canvas.set_size_request(settings.width, settings.height)
         canvas.show()
@@ -799,7 +809,7 @@ class App(object):
         self.scrollbar.connect("value-changed", self.update_scroll_pos)
         self.update_scroll_adjustment(None)
         self.scrollbar.set_value(datetime.datetime.now().hour *
-            self.schedule.hour_height)
+            self.weekview.hour_height)
 
         uiman = gtk.UIManager ()
         actiongroup = MenuCommand.create_action_group(self)
@@ -818,22 +828,22 @@ class App(object):
         w.add(vbox)
         w.show_all()
         self.window = w
-        self.schedule.connect("notify::selected", self.update_actions)
-        self.schedule.connect("notify::selected_start", self.update_actions)
-        self.schedule.connect("notify::selected_end", self.update_actions)
-        self.schedule.connect("notify::height", self.update_scroll_adjustment)
-        self.schedule.connect("notify::scale", self.update_scroll_adjustment)
+        self.weekview.connect("notify::selected", self.update_actions)
+        self.weekview.connect("notify::selected_start", self.update_actions)
+        self.weekview.connect("notify::selected_end", self.update_actions)
+        self.weekview.connect("notify::height", self.update_scroll_adjustment)
+        self.weekview.connect("notify::scale", self.update_scroll_adjustment)
 
     def update_scroll_pos(self, scrollbar):
-        self.schedule.y_scroll_offset = -scrollbar.get_value()
+        self.weekview.y_scroll_offset = -scrollbar.get_value()
 
     def update_scroll_adjustment(self, *unused):
-        self.scrollbar.set_range(0, self.schedule.hour_height * 25 -
-            self.schedule.height)
+        self.scrollbar.set_range(0, self.weekview.hour_height * 25 -
+            self.weekview.height)
 
     def size_allocate_cb(self, canvas, allocation):
-        self.schedule.width = allocation.width
-        self.schedule.height = allocation.height
+        self.weekview.width = allocation.width
+        self.weekview.height = allocation.height
         canvas.props.x2 = allocation.width
         canvas.props.y2 = allocation.height
 
