@@ -4,6 +4,7 @@ tokens = (
     'AT',
     'TIME',
     'AND',
+    'COMMA',
     'EACH',
     'DAY',
     'WEEK',
@@ -35,7 +36,8 @@ tokens = (
     )
 
 t_AT = r"@|at"
-t_AND = r",|and"
+t_AND = r"and"
+t_COMMA = r","
 t_EACH = r'every|each'
 t_DAY = r'days?'
 t_WEEK = r'weeks?'
@@ -204,6 +206,14 @@ def month_name_to_num(name):
         }
     return months[name[:3]]
 
+## misc
+
+def p_and_(t):
+    '''and : AND
+           | COMMA'''
+    t[0] = t[1]
+
+## numbers
 
 def p_number(t):
     '''number : ORDINAL
@@ -260,7 +270,7 @@ def p_weekday_qualified(t):
     t[0] = (t[2], t[1])
 
 def p_weekdays_recursive(t):
-    '''weekdays : WEEKDAY AND weekdays'''
+    '''weekdays : WEEKDAY and weekdays'''
     t[0] = (t[1],) + t[3]
 
 def p_weekdays_terminal(t):
@@ -301,7 +311,7 @@ def p_date_day_month(t):
     t[0] = make_date(month=month, day=day)
 
 def p_dates_recursive(t):
-    '''dates : date AND dates'''
+    '''dates : date and dates'''
     t[0] = (t[1],) + t[3]
 
 def p_dates_terminal(t):
