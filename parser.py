@@ -54,7 +54,7 @@ def t_TIME(t):
     h, m, phase = timeregex.match(t.value).groups()
     h = int(h)
     m = int(m[1:]) if m else 0
-    if phase == "pm" and h < 13:
+    if phase == "pm" and h < 12:
         h += 12
     t.value = datetime.time(hour = h, minute = m) 
     return t
