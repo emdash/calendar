@@ -435,10 +435,50 @@ start = 'datetimeset'
 
 import ply.yacc as yacc
 yacc.yacc()
+
+def parse(s):
+    return yacc.parse(s.lower())
+
+if __name__ == '__main__':
+
+    def test_parse(s, expected):
+        got = parse(s)
+        if not (got == expected):
+            print "Expected: %s\nGot: %s" % (expected, got)
     
-while 1:
-    try:
-        s = raw_input('dates > ').lower()
-    except EOFError:
-        break
-    print yacc.parse(s)
+    test_parse("wed", ast.DateSet(from_day_of_week(2)))
+    test_parse("5th", ast.DateSet(make_date(day=5)))
+    test_parse("oct 5th and nov 6th",
+               ast.DateSet(make_date(month=10, day=5),
+                           make_date(month=11, day=6)))
+
+    test_parse("every wed", ast.Weekly(2))
+    test_parse("every wed, thu and fri", ast.Weekly(2, 3, 4))
+    test_parse("every wed except every last wed",
+        ast.Except(ast.Weekly(2), ast.NthWeekday(-1, None, 2)))
+    
+    test_parse("(every wed) and (every 2nd thu)",
+               ast.And(ast.Weekly(2), ast.NthWeekday(2, None, 3)))
+    
+    test_parse("wednesday at 5PM for 1 hour",
+        ast.Period(ast.DateSet(from_day_of_week(2)), datetime.time(hour=17),
+                   datetime.timedelta(hours=1)))
+    
+    test_parse("25th of each october from 12:45PM to 4:45PM",
+               ast.Period(ast.Monthly(10, 25), datetime.time(hour=12, minute=45),
+                          datetime.time(hour=16, minute=45)))
+
+    test_parse("every day from today until october",
+                ast.Until(ast.Daily(datetime.date.today(), 1),
+                          make_date(month=10, day=1)))
+
+    test_parse("every wed from today until january 25",
+               ast.Until(ast.From(ast.Weekly(2), datetime.date.today()),
+                         make_date(month=1, day=25)))
+
+    test_parse("every 2 days repeating twice",
+               ast.For(ast.Daily(datetime.date.today(), 2), 3))
+
+    test_parse("every 2 days for 3 weeks",
+               ast.Until(ast.Daily(datetime.date.today(), 2),
+                         datetime.date.today() + datetime.timedelta(days=21)))
