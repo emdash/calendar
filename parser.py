@@ -389,6 +389,10 @@ def p_datetimeset_except(t):
     '''datetimeset : datetimeset EXCEPT datetimeset'''
     t[0] = ast.Except(t[1], t[3])
 
+def p_datetimeset_and_datetimeset(t):
+    '''datetimeset : datetimeset and datetimeset'''
+    t[0] = ast.And(t[1], t[3])
+
 def p_datetimeset_from(t):
     '''datetimeset : datetimeset FROM date'''
     t[0] = ast.From(t[1], t[3])
