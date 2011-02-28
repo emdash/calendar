@@ -415,10 +415,6 @@ def p_datetimeset_group(t):
     '''datetimeset : LPAREN datetimeset RPAREN'''
     t[0] = t[2]
 
-def p_datetimeset_and(t):
-    """datetimeset : datetimeset COMMA"""
-    t[0] = t[1]
-
 def p_datetimeset_at_time_for_duration(t):
     '''datetimeset : datetimeset AT TIME FOR duration'''
     t[0] = ast.Period(t[1], t[3], t[5])
