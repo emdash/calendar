@@ -308,12 +308,6 @@ def p_dates_terminal(t):
     '''dates : date'''
     t[0] = (t[1],)
 
-## datetime productions
-
-def p_datetimeset_time(t):
-    '''datetimeset : AT TIME'''
-    t[0] = t[2]
-
 ## datetimeset productions
 
 def p_datetimeset_dates(t):
