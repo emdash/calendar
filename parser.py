@@ -419,14 +419,24 @@ def p_datetimeset_group(t):
     '''datetimeset : LPAREN datetimeset RPAREN'''
     t[0] = t[2]
 
-def p_datetimeset_at_time_for_duration(t):
-    '''datetimeset : datetimeset AT TIME FOR duration'''
-    t[0] = ast.Period(t[1], t[3], t[5])
+def p_period_time_duration(t):
+    '''period : TIME FOR duration
+              | TIME until TIME'''
+    t[0] = (t[1], t[3])
 
-def p_datetimeset_from_start_to_end(t):
-    '''datetimeset : datetimeset FROM TIME until TIME
-                   | datetimeset AT TIME until TIME'''
-    t[0] = ast.Period(t[1], t[3], t[5])
+def p_periods_period(t):
+    '''periods : period'''
+    t[0] = (t[1],)
+
+def p_periods_period_and_periods(t):
+    '''periods : period and periods'''
+    t[0] = (t[1],) + t[3]
+
+def p_datetimeset_at_time_for_duration(t):
+    '''datetimeset : datetimeset AT periods
+                   | datetimeset FROM periods'''
+    periods = [ast.Period(t[1], start, end) for start, end in t[3]]
+    t[0] = ast.And(*periods) if len(periods) > 1 else periods[0]
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
@@ -467,6 +477,21 @@ if __name__ == '__main__':
     test_parse("25th of each october from 12:45PM to 4:45PM",
                ast.Period(ast.Monthly(10, 25), datetime.time(hour=12, minute=45),
                           datetime.time(hour=16, minute=45)))
+
+    test_parse("25th of each october from 12PM to 4PM and 8PM for 1 hour",
+               ast.And(ast.Period(ast.Monthly(10, 25),
+                                  datetime.time(hour=12),
+                                  datetime.time(hour=16)),
+                       ast.Period(ast.Monthly(10, 25),
+                                  datetime.time(hour=20),
+                                  datetime.timedelta(hours=1))))
+    
+    test_parse("25th of each october from 12PM to 4PM at 8PM for 1 hour",
+               ast.Period(ast.Period(ast.Monthly(10, 25),
+                                     datetime.time(hour=12),
+                                     datetime.time(hour=16)),
+                          datetime.time(hour=20),
+                          datetime.timedelta(hours=1)))
 
     test_parse("every day from today until october",
                 ast.Until(ast.Daily(datetime.date.today(), 1),
