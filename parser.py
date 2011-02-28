@@ -24,6 +24,7 @@ tokens = (
     'UNTIL',
     'MONTHNAME',
     'ORDINAL',
+    'CARDINAL',
     'WEEKDAY',
     'TODAY',
     'TOMORROW',
@@ -106,8 +107,13 @@ def t_MONTHNAME(t):
 import string
 
 def t_ORDINAL(t):
-    r"\d*(1(st)?|2(nd)?|3(rd)?|\d(th)?)"
+    r"\d*(1st|2nd|3rd|\dth)"
     t.value = int("".join((c for c in t.value if c in string.digits)))
+    return t
+
+def t_CARDINAL(t):
+    r"\d+"
+    t.value = int(t.value)
     return t
 
 t_MONTH = r"month"
@@ -194,10 +200,16 @@ def month_name_to_num(name):
         }
     return months[name[:3]]
 
+
+def p_number(t):
+    '''number : ORDINAL
+              | CARDINAL'''
+    t[0] = t[1]
+
 ## counts
 
 def p_count_n_times(t):
-    '''count : ORDINAL TIMES'''
+    '''count : CARDINAL TIMES'''
     t[0] = t[1]
 
 def p_count_once(t):
@@ -257,12 +269,12 @@ def p_date_ordinal(t):
     t[0] = make_date(day=t[1])
 
 def p_date_month_day(t):
-    '''date : MONTHNAME ORDINAL'''
+    '''date : MONTHNAME number'''
     month, day = t[1], t[2]
     t[0] = make_date(month=month, day=day)
 
 def p_date_day_month(t):
-    '''date : ORDINAL OF MONTHNAME'''
+    '''date : number OF MONTHNAME'''
     month, day = t[3], t[1]
     t[0] = make_date(month=month, day=day)
 
@@ -295,11 +307,11 @@ def p_datetimeset_every_day_from(t):
     t[0] = ast.Daily(t[4], 1)
 
 def p_datetimeset_daily(t):
-    '''datetimeset : EACH ORDINAL DAY'''
+    '''datetimeset : EACH CARDINAL DAY'''
     t[0] = ast.Daily(datetime.date.today(), t[2])
 
 def p_datetimeset_daily_from(t):
-    '''datetimeset : EACH ORDINAL DAY FROM date'''
+    '''datetimeset : EACH CARDINAL DAY FROM date'''
     t[0] = ast.Daily(t[5], t[2])
 
 def p_datetimeset_weekly(t):
@@ -331,15 +343,15 @@ def p_datetimeset_nth_to_last_weekday_of(t):
     t[0] = ast.NthWeekday(-t[2], t[7], *t[5])
 
 def p_datetimeset_ordinal_of_month(t):
-    '''datetimeset : ORDINAL OF EACH MONTH'''
+    '''datetimeset : number OF EACH MONTH'''
     t[0] = ast.Monthly(None, t[1])
 
 def p_datetimeset_ordinal_of_monthname(t):
-    '''datetimeset : ORDINAL OF EACH MONTHNAME'''
+    '''datetimeset : number OF EACH MONTHNAME'''
     t[0] = ast.Monthly(t[4], t[1])
 
 def p_datetimeset_month_ordinal(t):
-    '''datetimeset : EACH MONTHNAME ORDINAL'''
+    '''datetimeset : EACH MONTHNAME number'''
     t[0] = ast.Monthly(t[2], t[3])
 
 def p_datetimeset_except(t):
@@ -355,12 +367,12 @@ def p_datetimeset_until(t):
     t[0] = ast.Until(t[1], t[3])
 
 def p_datetimeset_for_days(t):
-    '''datetimeset : datetimeset FOR ORDINAL DAY'''
+    '''datetimeset : datetimeset FOR CARDINAL DAY'''
     t[0] = ast.Until(t[1], datetime.date.today() +
                      datetime.timedelta(days=t[3]))
 
 def p_datetimeset_for_weeks(t):
-    '''datetimeset : datetimeset FOR ORDINAL WEEK'''
+    '''datetimeset : datetimeset FOR CARDINAL WEEK'''
     t[0] = ast.Until(t[1], datetime.date.today() +
                      datetime.timedelta(days=t[3] * 7))
 
