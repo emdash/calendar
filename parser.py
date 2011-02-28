@@ -30,6 +30,8 @@ tokens = (
     'TOMORROW',
     'LPAREN',
     'RPAREN',
+    'HOURS',
+    'MINUTES',
     )
 
 t_AT = r"@|at"
@@ -39,12 +41,14 @@ t_DAY = r'days?'
 t_WEEK = r'weeks?'
 t_EXCEPT = r"but|except"
 t_FOR = r"for"
+t_HOURS = r"hours?"
+t_MINUTES = r"minutes?"
 
 import re
 
 timeregex = re.compile(r"(\d\d?)(:\d\d)?(am|pm)?")
 def t_TIME(t):
-    r"(\d\d?)(:\d\d)?(am|pm)?"
+    r"(\d\d?)(:\d\d)?(am|pm)"
     h, m, phase = timeregex.match(t.value).groups()
     h = int(h)
     m = int(m[1:]) if m else 0
@@ -224,6 +228,24 @@ def p_count_thrice(t):
     '''count : THRICE'''
     t[0] = 4
 
+## durations
+
+def p_duration_hours(t):
+    '''duration : CARDINAL HOURS'''
+    t[0] = datetime.timedelta(hours=t[1])
+    
+def p_duration_hours_minutes(t):
+    '''duration : CARDINAL HOURS CARDINAL MINUTES'''
+    t[0] = datetime.timedelta(hours=t[1], minutes=t[3])
+    
+def p_duration_hours_and_minutes(t):
+    '''duration : CARDINAL HOURS and CARDINAL MINUTES'''
+    t[0] = datetime.timedelta(hours=t[1], minutes=t[4])
+
+def p_duration_minutes(t):
+    '''duration : CARDINAL MINUTES'''
+    t[0] = datetime.timedelta(minutes=t[1])
+    
 ## weekdays
 
 def p_weekday_unqualified(t):
@@ -383,6 +405,19 @@ def p_datetimeset_repeating(t):
 def p_datetimeset_group(t):
     '''datetimeset : LPAREN datetimeset RPAREN'''
     t[0] = t[2]
+
+def p_datetimeset_and(t):
+    """datetimeset : datetimeset COMMA"""
+    t[0] = t[1]
+
+def p_datetimeset_at_time_for_duration(t):
+    '''datetimeset : datetimeset AT TIME FOR duration'''
+    t[0] = ast.Period(t[1], t[3], t[5])
+
+def p_datetimeset_from_start_to_end(t):
+    '''datetimeset : datetimeset FROM TIME UNTIL TIME
+                   | datetimeset AT TIME UNTIL TIME'''
+    t[0] = ast.Period(t[1], t[3], t[5])
 
 def p_error(t):
     print("Syntax error at '%s'" % t.value)
