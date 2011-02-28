@@ -213,6 +213,11 @@ def p_and_(t):
            | COMMA'''
     t[0] = t[1]
 
+def p_until(t):
+    '''until : UNTIL
+             | TO'''
+    t[0] = t[1]
+
 ## numbers
 
 def p_number(t):
@@ -389,7 +394,7 @@ def p_datetimeset_from(t):
     t[0] = ast.From(t[1], t[3])
 
 def p_datetimeset_until(t):
-    '''datetimeset : datetimeset UNTIL date'''
+    '''datetimeset : datetimeset until date'''
     t[0] = ast.Until(t[1], t[3])
 
 def p_datetimeset_for_days(t):
@@ -419,8 +424,8 @@ def p_datetimeset_at_time_for_duration(t):
     t[0] = ast.Period(t[1], t[3], t[5])
 
 def p_datetimeset_from_start_to_end(t):
-    '''datetimeset : datetimeset FROM TIME UNTIL TIME
-                   | datetimeset AT TIME UNTIL TIME'''
+    '''datetimeset : datetimeset FROM TIME until TIME
+                   | datetimeset AT TIME until TIME'''
     t[0] = ast.Period(t[1], t[3], t[5])
 
 def p_error(t):
