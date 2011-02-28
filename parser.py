@@ -1,4 +1,4 @@
-import ast
+import recurrence as ast
 
 tokens = (
     'AT',
