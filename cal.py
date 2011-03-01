@@ -33,6 +33,7 @@ from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command, MouseCommand
 from behavior import MouseInteraction, TextInput, Animation
 from dispatcher import MouseCommandDispatcher
+import recurrence
 import settings
 import shapes
 import os
@@ -114,9 +115,8 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
     
     date = gobject.property(type=float,
         default=datetime.date.today().toordinal())
-    selected_start = gobject.property(type=gobject.TYPE_PYOBJECT)
-    selected_end = gobject.property(type=gobject.TYPE_PYOBJECT)
     selected = gobject.property(type=gobject.TYPE_PYOBJECT)
+    selection_recurrence = gobject.property(type=gobject.TYPE_PYOBJECT)
     handle_locations = None
 
     def __init__(self, *args, **kwargs):
@@ -133,6 +133,10 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.ti = TextInput(self.text_changed_cb)
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
+        self.selection_recurrence = recurrence.Period(
+            recurrence.Daily(datetime.date.today(), 2),
+            datetime.time(14),
+            datetime.time(16))
 
     def _blink_cursor(self):
         if not self.editing:
@@ -362,30 +366,34 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         cr.restore()
 
     def draw_marquee(self, cr):
-        if not (self.selected_start and self.selected_end):
+        if not self.selection_recurrence:
             return
+        
+        s = datetime.date.fromordinal(int(self.date))
+        e = s + datetime.timedelta(days=self.days_visible())
+        for instance in self.selection_recurrence.timedOccurrences(s, e):
 
-        try:
-            area = self.area_from_start_end(self.selected_start,
-                                            self.selected_end).shrink(2, 0)
-        except DateNotVisible:
-            return
+            try:
+                area = self.area_from_start_end(instance.start,
+                                                instance.end).shrink(2, 0)
+            except DateNotVisible:
+                return
 
-        shapes.filled_box(cr, area, settings.marquee_fill_color)
-        cr.set_source(settings.marquee_text_color)
+            shapes.filled_box(cr, area, settings.marquee_fill_color)
+            cr.set_source(settings.marquee_text_color)
 
-        text = self.selected_start.strftime ("%X")
-        shapes.text_above(cr, text, area.x, area.y - 2, area.width)
-            
-        text = self.selected_end.strftime ("%X")
-        shapes.text_below(cr, text, area.x, area.y2 + 2, area.width)
+            text = instance.start.strftime ("%X")
+            shapes.text_above(cr, text, area.x, area.y - 2, area.width)
+        
+            text = instance.end.strftime ("%X")
+            shapes.text_below(cr, text, area.x, area.y2 + 2, area.width)
 
-        duration = self.selected_end - self.selected_start
-        m = int (duration.seconds / 60) % 60
-        h = int (duration.seconds / 60 / 60)
+            duration = instance.duration
+            m = int (duration.seconds / 60) % 60
+            h = int (duration.seconds / 60 / 60)
 
-        text = "%dh %dm" % (h, m)
-        shapes.centered_text(cr, area, text, settings.text_color)
+            text = "%dh %dm" % (h, m)
+            shapes.centered_text(cr, area, text, settings.text_color)
 
     def draw_top_left_corner(self, cr):
         area = shapes.Area(0, 0, self.day_width, self.hour_height)
@@ -431,13 +439,23 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.draw_comfort_lines(cr)
 
     def select_area(self, x, y, width, height, quantize=True):
-        self.selected_start = self.point_to_datetime (x, y, quantize)
-        # constrain selection to a single day
-        self.selected_end = self.point_to_datetime(x, y + height, quantize)
-        if self.selected_start == self.selected_end:
-            self.selected_start = None
-            self.selected_end = None
+        try:
+            start = self.point_to_datetime (x, y, quantize)
+            end = self.point_to_datetime(x + width, y + height, quantize)
+        except DateNotVisible:
+            return
 
+        start_date = datetime.date(start.year, start.month, start.day)
+        end_date = datetime.date(end.year, end.month, end.day)
+        start_time = datetime.time(start.hour, start.minute)
+        end_time = datetime.time(end.hour, end.minute)
+
+        self.selection_recurrence = recurrence.Period(
+            recurrence.Until(
+                recurrence.Daily(start_date, 1), end_date),
+            start_time,
+            end_time)
+        
     def select_point(self, x, y):
         self.select_event(self.point_to_event(x, y))
 
@@ -492,19 +510,16 @@ class SelectPoint(Command):
         self.instance = instance
         self.point = x, y
         self.selected = self.instance.selected
-        self.selected_start = self.instance.selected_start
-        self.selected_end = self.instance.selected_end
+        self.selection = self.instance.selection_recurrence
 
     def do(self):
         self.instance.select_point(*self.point)
-        self.instance.selected_start = None
-        self.instance.selected_end = None
+        self.instance.selection_recurrence = None
         return True
 
     def undo(self):
         self.instance.select_event(self.selected)
-        self.instance.selected_start = self.selected_start
-        self.instance.selected_end = self.selected_end
+        self.instance.selection_recurrence = self.selection
 
 class SelectArea(MouseCommand):
 
@@ -516,8 +531,7 @@ class SelectArea(MouseCommand):
         self.instance = instance
         self.mdown = abs
         self.selected = self.instance.selected
-        self.selected_start = self.instance.selected_start
-        self.selected_end = self.instance.selected_end
+        self.selection_recurrence = self.instance.selection_recurrence
 
     def do(self):
         self.instance.select_event(None)
@@ -531,14 +545,13 @@ class SelectArea(MouseCommand):
         height = y2 - y1
 
         # constrain selection to the day where the mouse was first clicked.
-        self.instance.select_area (self.mdown[0], y1, width, height,
+        self.instance.select_area (x1, y1, width, height,
             self.shift)
         return True
 
     def undo(self):
         self.instance.select_event(self.selected)
-        self.instance.selected_start = self.selected_start
-        self.instance.selected_end = self.selected_end
+        self.instance.selection_recurrence = self.selection_recurrence
 
 class MoveEvent(MouseCommand):
 
@@ -652,9 +665,8 @@ class NewEvent(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return app.weekview.selected_start != None and\
-            app.weekview.selected_end != None
-
+        return app.weekview.selection_recurrence != None
+    
     def configure(self):
         start = self.app.weekview.selected_start
         end = self.app.weekview.selected_end
@@ -829,8 +841,7 @@ class App(object):
         w.show_all()
         self.window = w
         self.weekview.connect("notify::selected", self.update_actions)
-        self.weekview.connect("notify::selected_start", self.update_actions)
-        self.weekview.connect("notify::selected_end", self.update_actions)
+        self.weekview.connect("notify::selection_recurrence", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
 
