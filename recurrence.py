@@ -1,3 +1,32 @@
+import datetime
+
+def dateRange(start, end):
+    dt = datetime.timedelta(days=1)
+    cur = start
+    while cur <= end:
+        yield cur
+        cur += dt
+
+class Occurrence(object):
+
+    def __init__(self, date, start=None, end=None):
+        if start:
+            self.start = datetime.datetime(
+                date.year,
+                date.month,
+                date.day,
+                start.hour,
+                start.minute)
+        if end:
+            self.end = datetime.datetime(
+                date.year,
+                date.month,
+                date.day,
+                end.hour,
+                end.minute)
+        self.duration = self.end - self.start
+        self.date = date
+
 class Node(object):
 
     def __init__(self, *children):
@@ -10,14 +39,39 @@ class Node(object):
         return self.__class__.__name__ + "(" + \
             ", ".join((str(c) for c in self.children)) + ')'
 
+    def occursOnDate(self, date):
+        raise NotImplemented
+
+    def untimedOccurrences(self, start, end):
+        return (date for date in dateRange(start, end) if self.occursOnDate(date))
+
+    def timedOccurrences(self, start, end):
+        return ()
+
 class DateSet(Node):
 
-    pass
+    def __init__(self, *children):
+        Node.__init__(self, *sorted(children))
+        self.dates = set(children)
+
+    def occursOnDate(self, date):
+        return date in self.dates
+
+    def untimedOccurrences(self, start, end):
+        return (c for c in self.children if start <= c <= end)
 
 class Daily(Node):
-    
-    pass
 
+    def __init__(self, start_date, step):
+        Node.__init__(self, start_date, step)
+        self.start = start_date.toordinal()
+        self.step = step
+        self.phase = self.start % self.step
+
+    def occursOnDate(self, date):
+        ord = date.toordinal()
+        return ord >= self.start and ((ord - self.start) % self.step) == 0
+    
 class Weekly(Node):
 
     pass
@@ -40,19 +94,67 @@ class Except(Node):
         Node.__init__(self, include, exclude)
         self.include = include
         self.exclude = exclude
-        
-class From(Node):
 
-    pass
+class Filter(Node):
 
-class Until(Node):
+    def __init__(self, child, *args):
+        Node.__init__(self, child, *args)
+        self.child = child
+        self.args = args
 
-    pass
+    def occursOnDate(self, date):
+        return self.filter(date) and self.child.occursOnDate(date)
+
+    def timedOccurrences(self, start, end):
+        return (p for p in self.child.timedOccurrences(start, end)
+                if self.filterPeriod(c))
+
+    def filter(self, date):
+        raise NotImplemented
+
+    def filterPeriod(self, period):
+        return self.filter(period.date)
+
+class From(Filter):
+
+    def filter(self, date):
+        return date >= self.args[0]
+
+class Until(Filter):
+
+    def filter(self, date):
+        return date <= self.args[0]
 
 class For(Node):
 
     pass
 
-class Period(Node):
+class Period(Filter):
 
-    pass
+    def __init__(self, child, start, end):
+        Filter.__init__(self, child, start, end)
+        self.child = child
+        self.start = start
+        if isinstance(end, datetime.timedelta):
+            self.end = datetime.time(hour=(start.hour + (end.seconds / 360)) % 24,
+                                     minute=(start.minute + (end.seconds / 60)) % 60)
+        else:
+            self.end = end
+
+    def filter(self, date):
+        return True
+
+    def untimedOccurrences(self, start, end):
+        return ()
+    
+    def timedOccurrences(self, start, end):
+        for c in self.child.untimedOccurrences(start, end):
+            yield Occurrence(c, self.start, self.end)
+
+if __name__ == '__main__':
+
+    print list(Period(Daily(datetime.date(2011, 2, 28), 2),
+                 datetime.time(12),
+                 datetime.time(14)).timedOccurrences(
+        datetime.datetime(2011, 2, 20),
+        datetime.datetime(2011, 3, 5)))
