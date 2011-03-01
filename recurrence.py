@@ -17,13 +17,15 @@ class Occurrence(object):
                 date.day,
                 start.hour,
                 start.minute)
-        if end:
+        if end and isinstance(end, datetime.time):
             self.end = datetime.datetime(
                 date.year,
                 date.month,
                 date.day,
                 end.hour,
                 end.minute)
+        else:
+            self.end = self.start + end
         self.duration = self.end - self.start
         self.date = date
 
@@ -135,11 +137,7 @@ class Period(Filter):
         Filter.__init__(self, child, start, end)
         self.child = child
         self.start = start
-        if isinstance(end, datetime.timedelta):
-            self.end = datetime.time(hour=(start.hour + (end.seconds / 360)) % 24,
-                                     minute=(start.minute + (end.seconds / 60)) % 60)
-        else:
-            self.end = end
+        self.end = end
 
     def filter(self, date):
         return True
