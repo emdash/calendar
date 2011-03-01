@@ -36,6 +36,7 @@ from dispatcher import MouseCommandDispatcher
 import recurrence
 import settings
 import shapes
+import parser
 import os
 
 #TODO: repeating events
@@ -852,6 +853,7 @@ class App(object):
         self.weekview.connect("notify::selection_recurrence", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
+        self.selection_entry.connect("activate", self.selection_entry_activate_cb)
 
     def pack_toolbar_widget(self, toolbar, widget):
         toolitem = gtk.ToolItem()
@@ -860,6 +862,12 @@ class App(object):
         widget.show()
         toolitem.show()
         toolbar.add(toolitem)
+
+    def selection_entry_activate_cb(self, entry):
+        try:
+            self.weekview.selection_recurrence = parser.parse(entry.get_text())
+        except Exception, e:
+            print e
 
     def update_scroll_pos(self, scrollbar):
         self.weekview.y_scroll_offset = -scrollbar.get_value()
