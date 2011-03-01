@@ -139,10 +139,55 @@ class Monthly(Node):
         else:
             return (date.day == self.day) and (date.month == self.month)
 
+        
+def toOrdinal(n):
+    s = str(n)
+    if s[-1] < '4':
+        ending = ['st', 'nd', 'rd'][s[-1]]
+    else:
+        ending = 'th'
+    return s + ending
+        
 class NthWeekday(Node):
 
-    pass
+    def __init__(self, n, month, *weekdays):
+        Node.__init__(self, n, month, *weekdays)
+        self.n = n
+        self.month = month
+        self.days = set(weekdays)
 
+    def toEnglish(self):
+        n = toOrdinal(self.n)
+        days = ", ".join((daynames[d] for d in self.days))
+        if not self.month:
+            return "%s %s" % (n, days)
+        else:
+            return "%s %s of each %s" % (n, days, monthnames[month])
+
+    def occursOnDate(self, date):
+        if self.month and not date.month == self.month:
+            return False
+        if self.n > 0:
+            return (date.weekday() in self.days) and\
+                (((date.day / 7) + 1) == self.n)
+        else:
+            return (date.weekday() in self.days) and\
+                (((self.last_day(date) - date.day) / 7) + 1 == abs(self.n))
+
+    last_days = {
+        11 : 30,
+        4 : 30,
+        6 : 30,
+        7 : 30,
+        9 : 30,
+        }
+    
+    def last_day(self, date):
+        month = date.month
+        if month == 2:
+            return 29 if ((date.year % 4) == 0) else 28
+        return self.last_days.get(month, 31)
+    
 class And(Node):
 
     pass
