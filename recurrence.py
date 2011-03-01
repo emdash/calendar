@@ -106,10 +106,38 @@ class Weekly(Node):
     def occursOnDate(self, date):
         return date.weekday() in self.days
 
+monthnames = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "october",
+    "november",
+    "december"
+    ]
 
 class Monthly(Node):
 
-    pass
+    def __init__(self, month, day):
+        Node.__init__(self, day, month)
+        self.day = day
+        self.month = month
+
+    def toEnglish(self):
+        if not self.month:
+            return "%d of each month" % self.day
+        else:
+            return "%d of each %s" % (self.day, monthnames[self.month])
+
+    def occursOnDate(self, date):
+        if not self.month:
+            return date.day == self.day
+        else:
+            return (date.day == self.day) and (date.month == self.month)
 
 class NthWeekday(Node):
 
