@@ -49,6 +49,11 @@ t_MINUTES = r"minutes?"
 import re
 
 timeregex = re.compile(r"(\d\d?)(:\d\d)?(am|pm)?")
+
+def t_MONTH(t):
+    r"month"
+    return t
+
 def t_TIME(t):
     r"(\d\d?)(:\d\d)?(am|pm)"
     h, m, phase = timeregex.match(t.value).groups()
@@ -121,8 +126,6 @@ def t_CARDINAL(t):
     r"\d+"
     t.value = int(t.value)
     return t
-
-t_MONTH = r"month"
 
 def t_THIS(t):
     r"this"
@@ -473,6 +476,8 @@ if __name__ == '__main__':
     test_parse("wednesday at 5PM for 1 hour",
         ast.Period(ast.DateSet(from_day_of_week(2)), datetime.time(hour=17),
                    datetime.timedelta(hours=1)))
+
+    test_parse("25 of each month", ast.Monthly(None, 25))
     
     test_parse("25th of each october from 12:45PM to 4:45PM",
                ast.Period(ast.Monthly(10, 25), datetime.time(hour=12, minute=45),
