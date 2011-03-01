@@ -777,7 +777,7 @@ class App(object):
 
     ui = """
     <ui>
-        <toolbar name="mainToolBar">
+        <toolbar name="upperToolbar">
             <toolitem action="Undo"/>
             <toolitem action="Redo"/>
             <separator />
@@ -789,9 +789,11 @@ class App(object):
             <toolitem action="GoToToday"/>
             <toolitem action="GoToSelected"/>
             <separator />
-            <toolitem action="ZoomIn"/>
-            <toolitem action="ZoomOut"/>
             <toolitem action="SwitchViews"/>
+        </toolbar>
+        <toolbar name="lowerToolbar">
+           <toolitem action="ZoomIn"/>
+           <toolitem action="ZoomOut"/>
         </toolbar>
     </ui>"""
 
@@ -816,7 +818,6 @@ class App(object):
         hbox.pack_start(canvas)
         self.scrollbar = gtk.VScrollbar()
         hbox.pack_start(self.scrollbar, False, False)
-        vbox.pack_end(hbox)
 
         self.scrollbar.connect("value-changed", self.update_scroll_pos)
         self.update_scroll_adjustment(None)
@@ -834,7 +835,14 @@ class App(object):
         self.undo.redo_action.connect("activate", self.update_actions)
         uiman.insert_action_group(actiongroup)
         uiman.add_ui_from_string(self.ui)
-        toolbar = uiman.get_widget("/mainToolBar")
+        toolbar = uiman.get_widget("/upperToolbar")
+        vbox.pack_start (toolbar, False, False)
+        vbox.pack_start (hbox, True, True)
+        toolbar = uiman.get_widget("/lowerToolbar")
+
+        self.selection_entry = gtk.Entry()
+        
+        self.pack_toolbar_widget(toolbar, self.selection_entry)
         vbox.pack_start (toolbar, False, False)
 
         w.add(vbox)
@@ -844,6 +852,14 @@ class App(object):
         self.weekview.connect("notify::selection_recurrence", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
+
+    def pack_toolbar_widget(self, toolbar, widget):
+        toolitem = gtk.ToolItem()
+        toolitem.add(widget)
+        toolitem.set_expand(True)
+        widget.show()
+        toolitem.show()
+        toolbar.add(toolitem)
 
     def update_scroll_pos(self, scrollbar):
         self.weekview.y_scroll_offset = -scrollbar.get_value()
