@@ -83,10 +83,29 @@ class Daily(Node):
     def occursOnDate(self, date):
         ord = date.toordinal()
         return ord >= self.start and ((ord - self.start) % self.step) == 0
+
+daynames = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday"
+    ]
     
 class Weekly(Node):
 
-    pass
+    def __init__(self, *children):
+        Node.__init__(self, *children)
+        self.days = set(children)
+
+    def toEnglish(self):
+        return ", ".join((daynames[d] for d in self.days))
+
+    def occursOnDate(self, date):
+        return date.weekday() in self.days
+
 
 class Monthly(Node):
 
