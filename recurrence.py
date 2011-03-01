@@ -41,6 +41,9 @@ class Node(object):
         return self.__class__.__name__ + "(" + \
             ", ".join((str(c) for c in self.children)) + ')'
 
+    def toEnglish(self):
+        raise NotImplemented
+
     def occursOnDate(self, date):
         raise NotImplemented
 
@@ -56,6 +59,9 @@ class DateSet(Node):
         Node.__init__(self, *sorted(children))
         self.dates = set(children)
 
+    def toEnglish(self):
+        return ", ".join((str(c) for c in self.children))
+
     def occursOnDate(self, date):
         return date in self.dates
 
@@ -69,6 +75,10 @@ class Daily(Node):
         self.start = start_date.toordinal()
         self.step = step
         self.phase = self.start % self.step
+
+    def toEnglish(self):
+        return "every %d days starting %s" % \
+            (self.step, self.children[0])
 
     def occursOnDate(self, date):
         ord = date.toordinal()
@@ -119,10 +129,16 @@ class Filter(Node):
 
 class From(Filter):
 
+    def toEnglish(self):
+        return "%s from %s" % (self.child.toEnglish(), self.args[0])
+
     def filter(self, date):
         return date >= self.args[0]
 
 class Until(Filter):
+
+    def toEnglish(self):
+        return "%s until %s" % (self.child.toEnglish(), self.args[0])
 
     def filter(self, date):
         return date <= self.args[0]
@@ -139,6 +155,13 @@ class Period(Filter):
         self.start = start
         self.end = end
 
+    def toEnglish(self):
+        if isinstance(self.end, datetime.timedelta):
+            return "%s at %s for %s" % \
+                (self.child.toEnglish(), self.start, self.end)
+        return "%s from %s until %s" %\
+            (self.child.toEnglish(), self.start, self.end)
+    
     def filter(self, date):
         return True
 
