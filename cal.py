@@ -451,11 +451,16 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         start_time = datetime.time(start.hour, start.minute)
         end_time = datetime.time(end.hour, end.minute)
 
-        self.selection_recurrence = recurrence.Period(
-            recurrence.Until(
-                recurrence.Daily(start_date, 1), end_date),
-            start_time,
-            end_time)
+        if (end_date - start_date).days < 4:
+            self.selection_recurrence = recurrence.Period(
+                recurrence.DateSet(*recurrence.dateRange(start_date, end_date)),
+                start_time,
+                end_time)
+        else:
+            self.selection_recurrence = recurrence.Period(
+                recurrence.Until(recurrence.Daily(start_date, 1), end_date),
+                start_time,
+                end_time)
         
     def select_point(self, x, y):
         self.select_event(self.point_to_event(x, y))
@@ -884,7 +889,12 @@ class App(object):
 
     def update_actions(self, *unused):
         MenuCommand.update_actions(self)
-
+        if not (self.weekview.selection_recurrence is None):
+            text = self.weekview.selection_recurrence.toEnglish()
+        else:
+            text = ""
+        self.selection_entry.set_text(text)
+            
     def run(self):
         self.load()
         gtk.main()
