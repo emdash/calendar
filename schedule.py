@@ -4,11 +4,15 @@ import recurrence
 def eventFromStartEnd(start, end, description):
     return Event(recurrence.fromDateTimes(start, end), description)
 
+def null(*args):
+    return
+
 class Event(object):
 
     def __init__(self, recurrence, description):
-        self.callback = None
-        self.args = None
+        self.callback = null
+        self.args = ()
+        self._recurrence = None
         self.recurrence = recurrence
         self._description = None
         self.description = description
@@ -20,8 +24,19 @@ class Event(object):
         if value != self.description:
             self._description = value
             # FIXME: make callback more generic
+            self.notify()
  
     description = property(get_description, set_description)
+
+    def get_recurrence(self):
+        return self._recurrence
+
+    def set_recurrence(self, value):
+        # don't compare for equality, as this might be expensive
+        self._recurrence = value
+        self.notify()
+
+    recurrence = property(get_recurrence, set_recurrence)
 
     def set_date_changed_cb(self, callback, args):
         self.callback = callback
@@ -29,6 +44,9 @@ class Event(object):
 
     def timedOccurences(self, start, end):
         return self.recurrence.timedOccurrences(start, end)
+
+    def notify(self):
+        self.callback(self, *self.args)
 
 class FixedEvent(Event):
 
@@ -115,5 +133,5 @@ class Schedule(object):
         for event in self.events:
             event.set_date_changed_cb(self._event_changed_cb, self.args)
 
-    def _event_changed_cb(self, event, old):
+    def _event_changed_cb(self, event):
         self.callback(*self.args)
