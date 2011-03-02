@@ -587,19 +587,18 @@ class MoveEvent(MouseCommand):
     def __init__(self, instance, event, abs):
         self.instance = instance
         self.mdown = abs
-        self.start, self.end = event.start, event.end
+        self.old = event.recurrence
         self.event = event
         self.offset = instance.day_width / 2
 
     def do(self):
         x, y = self.rel
         delta = self.instance.point_to_timedelta(int(x + self.offset), y, self.shift)
-        self.event.end = self.end + delta
-        self.event.start = self.start + delta
+        self.event.recurrence = self.old + delta
         return True
 
     def undo(self):
-        self.event.start, self.event.end = self.start, self.end
+        self.event.recurrence = self.old
 
 class SetEventStart(MouseCommand):
 
