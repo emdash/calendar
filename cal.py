@@ -200,7 +200,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
     def point_to_event(self, x, y):
         point = (x / self.scale, y / self.scale)
-        for event, area in self.events.iteritems ():
+        for event, (area, instance) in self.events.iteritems ():
             if area.contains_point(point):
                 return event
 
@@ -227,7 +227,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         
     def selection_handles(self, cr):
 
-        area = self.events[self.selected]
+        area = self.events[self.selected][0]
         radius = 10
 
         top = area.above(2, radius)
@@ -357,7 +357,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
                                        settings.default_event_text_color,
                                        cursor_pos)
            
-        self.events[event] = area
+        self.events[event] = (area, period)
 
     def dates_visible(self):
         s = datetime.date.fromordinal(int(self.date))
