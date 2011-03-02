@@ -877,6 +877,7 @@ class App(object):
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
         self.selection_entry.connect("activate", self.selection_entry_activate_cb)
+        self.selection_entry.connect("changed", self.selection_entry_changed_cb)
 
     def pack_toolbar_widget(self, toolbar, widget):
         toolitem = gtk.ToolItem()
@@ -886,11 +887,19 @@ class App(object):
         toolitem.show()
         toolbar.add(toolitem)
 
+    dont_update_entry = False
+
     def selection_entry_activate_cb(self, entry):
+        self.dont_update_entry = True
         try:
             self.undo.commit(SelectRecurrence(self, self.selection_entry.get_text()))
         except Exception, e:
             print e
+            self.selection_entry.set_icon_from_stock(1, gtk.STOCK_DIALOG_WARNING)
+        self.dont_update_entry = False
+
+    def selection_entry_changed_cb(self, entry):
+        self.selection_entry.set_icon_from_stock(1, None)
 
     def update_scroll_pos(self, scrollbar):
         self.weekview.y_scroll_offset = -scrollbar.get_value()
@@ -907,6 +916,8 @@ class App(object):
 
     def update_actions(self, *unused):
         MenuCommand.update_actions(self)
+        if self.dont_update_entry:
+            return
         if not (self.weekview.selection_recurrence is None):
             text = self.weekview.selection_recurrence.toEnglish()
         else:
