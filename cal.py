@@ -691,21 +691,18 @@ class NewEvent(MenuCommand):
         return app.weekview.selection_recurrence != None
     
     def configure(self):
-        start = self.app.weekview.selected_start
-        end = self.app.weekview.selected_end
-        self.event = Event(start, end, "New Event")
+        self.selection = self.app.weekview.selection_recurrence
+        self.event = Event(self.selection, "New Event")
 
     def do(self):
         self.app.model.add_event(self.event)
-        self.app.weekview.selected_start = None
-        self.app.weekview.selected_end = None
+        self.app.weekview.selection_recurrence = None
         self.app.weekview.select_event(self.event)
         return True
 
     def undo(self):
         self.app.model.del_event(self.event)
-        self.app.weekview.selected_start = self.event.start
-        self.app.weekview.selected_end = self.event.end
+        self.app.weekview.selection_recurrence = self.selection
         self.app.weekview.selected = None
         return True
 
