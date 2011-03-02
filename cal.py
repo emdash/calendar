@@ -127,7 +127,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
         self.connect("notify", self.do_notify)
-        self.events = {}
+        self.occurrences = {}
         self.selected = None
         self.font_desc = pango.FontDescription("Sans 8")
         self.cursor_showing = True
@@ -175,6 +175,8 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         x /= self.scale
         y /= self.scale
         day = int(x / self.day_width)
+        if y < 0:
+            day += 1
         minute = (day * 24 * 60) + quantize(int((y / self.hour_height) * 60), 15)
 
         return datetime.timedelta(minutes=minute)
@@ -198,13 +200,17 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         end = self.datetime_to_point(end)
         return shapes.Area(start[0], start[1], self.day_width, end[1] - start[1])
 
-    def point_to_event(self, x, y):
+    def point_to_occurrence(self, x, y):
         point = (x / self.scale, y / self.scale)
-        for event, (area, instance) in self.events.iteritems ():
+        for period, (event, area) in self.occurrences.iteritems():
             if area.contains_point(point):
-                return event
+                return event, period, area
 
         return None
+
+    def point_to_event(self, x, y):
+        ret = self.point_to_occurrence(x, y)
+        return ret[0] if ret else None
 
     def do_notify(self, something, something_else):
         #self.day_width = self.width / 8
@@ -226,8 +232,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
             self.x + self.width, self.y + self.height)
         
     def selection_handles(self, cr):
-
-        area = self.events[self.selected][0]
+        area = self.occurrences[self.selected][1]
         radius = 10
 
         top = area.above(2, radius)
@@ -348,7 +353,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         
         shapes.filled_box(cr, area, settings.default_event_bg_color)
 
-        if (event == self.selected) and (self.cursor_showing):
+        if (period == self.selected) and (self.cursor_showing):
             cursor_pos = self.ti.get_cursor_pos()
         else:
             cursor_pos = -1
@@ -357,7 +362,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
                                        settings.default_event_text_color,
                                        cursor_pos)
            
-        self.events[event] = (area, period)
+        self.occurrences[period] = (event, area)
 
     def dates_visible(self):
         s = datetime.date.fromordinal(int(self.date))
@@ -365,7 +370,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         return s, e
 
     def draw_events(self, cr):
-        self.events = {}
+        self.occurrences = {}
         for evt, period in self.model.timedOccurrences(*self.dates_visible()):
             self.draw_event(cr, evt, period)
         cr.restore()
@@ -434,7 +439,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
                      self.width - self.day_width, self.height - self.hour_height)
         cr.clip()
         self.draw_marquee(cr)
-        if (self.selected) and (self.selected in self.events):
+        if (self.selected) and (self.selected in self.occurrences):
             self.selection_handles (cr)
         cr.restore()
         
@@ -465,11 +470,16 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
                 end_time)
         
     def select_point(self, x, y):
-        self.select_event(self.point_to_event(x, y))
+        occurrence = self.point_to_occurrence(x, y)
+        if occurrence:
+            self.select_occurrence(occurrence[1])
+        else:
+            self.select_occurrence(None)
 
-    def select_event(self, event):
-        self.selected = event
-        self.configure_editor(event)
+    def select_occurrence(self, occurrence):
+        self.selected = occurrence
+        if occurrence:
+            self.configure_editor(self.occurrences[occurrence][0])
         self.changed(False)
 
     def configure_editor(self, event):
@@ -523,7 +533,7 @@ class SelectPoint(Command):
         return True
 
     def undo(self):
-        self.instance.select_event(self.selected)
+        self.instance.select_occurrence(self.selected)
         self.instance.selection_recurrence = self.selection
 
 class SelectArea(MouseCommand):
@@ -539,7 +549,7 @@ class SelectArea(MouseCommand):
         self.selection_recurrence = self.instance.selection_recurrence
 
     def do(self):
-        self.instance.select_event(None)
+        self.instance.select_occurrence(None)
 
         # normalize to x, y, width, height with positive values
         x1 = min(self.mdown[0], self.abs[0])
@@ -555,7 +565,7 @@ class SelectArea(MouseCommand):
         return True
 
     def undo(self):
-        self.instance.select_event(self.selected)
+        self.instance.select_occurrence(self.selected)
         self.instance.selection_recurrence = self.selection_recurrence
 
 class SelectRecurrence(Command):
@@ -696,7 +706,6 @@ class NewEvent(MenuCommand):
     def do(self):
         self.app.model.add_event(self.event)
         self.app.weekview.selection_recurrence = None
-        self.app.weekview.select_event(self.event)
         return True
 
     def undo(self):
@@ -716,16 +725,17 @@ class DelEvent(MenuCommand):
         return app.weekview.selected != None
 
     def configure(self):
-        self.event = self.app.weekview.selected
+        self.selected = self.app.weekview.selected
+        self.event = self.app.weekview.occurrence[self.selected][0]
 
     def do(self):
         self.app.model.del_event(self.event)
-        self.app.weekview.select_event(None)
+        self.app.weekview.select_occurrence(None)
         return True
 
     def undo(self):
         self.app.model.add_event(self.event)
-        self.app.weekview.select_event(self.event)
+        self.app.weekview.select_occurrence(self.selected)
         return True
 
 class GoToToday(MenuCommand):
