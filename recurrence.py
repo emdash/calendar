@@ -16,7 +16,7 @@ def timePlusTimedelta(time, delta):
 
 class Occurrence(object):
 
-    def __init__(self, date, start=None, end=None):
+    def __init__(self, id, date, start=None, end=None):
         if start:
             self.start = datetime.datetime(
                 date.year,
@@ -35,6 +35,15 @@ class Occurrence(object):
             self.end = self.start + end
         self.duration = self.end - self.start
         self.date = date
+        self.id = id
+
+    def __eq__(self, other):
+        if not other:
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
 
 class Node(object):
 
@@ -288,8 +297,10 @@ class Period(Filter):
         return ()
     
     def timedOccurrences(self, start, end):
+        id = 0
         for c in self.child.untimedOccurrences(start, end):
-            yield Occurrence(c, self.start, self.end)
+            yield Occurrence(id, c, self.start, self.end)
+            id += 1
 
 if __name__ == '__main__':
 
