@@ -559,6 +559,24 @@ class SelectArea(MouseCommand):
         self.instance.select_event(self.selected)
         self.instance.selection_recurrence = self.selection_recurrence
 
+class SelectRecurrence(Command):
+
+    def __init__(self, app, text):
+        self.app = app
+        self.selected = app.weekview.selected
+        self.old = app.weekview.selection_recurrence
+
+        self.new = parser.parse(text)
+        self.do()
+
+    def do(self):
+        self.app.weekview.selection_recurrence = self.new
+        self.app.weekview.selected = None
+
+    def undo(self):
+        self.app.weekview.selected = self.selected
+        self.app.weekview.selection_recurrence = self.old
+
 class MoveEvent(MouseCommand):
 
     @classmethod
@@ -870,7 +888,7 @@ class App(object):
 
     def selection_entry_activate_cb(self, entry):
         try:
-            self.weekview.selection_recurrence = parser.parse(entry.get_text())
+            self.undo.commit(SelectRecurrence(self, self.selection_entry.get_text()))
         except Exception, e:
             print e
 
