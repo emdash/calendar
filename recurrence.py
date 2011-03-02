@@ -125,6 +125,9 @@ class Weekly(Node):
         Node.__init__(self, *children)
         self.days = set(children)
 
+    def __add__(self, delta):
+        return Weekly(*((c + delta.days) % 7 for c in self.days))
+
     def toEnglish(self):
         return ", ".join((daynames[d] for d in self.days))
 
@@ -304,8 +307,25 @@ class Period(Filter):
 
 if __name__ == '__main__':
 
-    print list(Period(Daily(datetime.date(2011, 2, 28), 2),
-                 datetime.time(12),
-                 datetime.time(14)).timedOccurrences(
-        datetime.datetime(2011, 2, 20),
-        datetime.datetime(2011, 3, 5)))
+    delta = datetime.timedelta(days=1, hours=1)
+
+    assert (DateSet(datetime.date(2011, 3, 2)) + delta ==
+            DateSet(datetime.date(2011, 3, 3)))
+
+    assert (Daily(datetime.date(2011, 3, 2), 2) + delta ==
+            Daily(datetime.date(2011, 3, 3), 2))
+
+    assert (Weekly(1, 2) + delta ==
+            Weekly(2, 3))
+
+    assert (Until(Daily(datetime.date(2011, 3, 2), 1),
+                  datetime.date(2011, 3, 10)) + delta ==
+            Until(Daily(datetime.date(2011, 3, 3), 1),
+                  datetime.date(2011, 3, 11)))
+
+    assert (Period(DateSet(datetime.date(2011, 3, 2)),
+                   datetime.time(15, 45),
+                   datetime.time(16, 45)) + delta ==
+            Period(DateSet(datetime.date(2011, 3, 3)),
+                   datetime.time(16, 45),
+                   datetime.time(17, 45)))
