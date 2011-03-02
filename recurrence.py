@@ -10,6 +10,10 @@ def dateRange(start, end):
 def fromDateTimes(start, end):
     return Period(DateSet(start.date()), start.time(), end.time())
 
+def timePlusTimedelta(time, delta):
+    result = datetime.datetime(2011, 3, 2, time.hour, time.minute) + delta
+    return result.time()
+
 class Occurrence(object):
 
     def __init__(self, date, start=None, end=None):
@@ -44,6 +48,9 @@ class Node(object):
         return self.__class__.__name__ + "(" + \
             ", ".join((str(c) for c in self.children)) + ')'
 
+    def __add__(self, other):
+        raise NotImplemented
+
     def toEnglish(self):
         raise NotImplemented
 
@@ -62,6 +69,9 @@ class DateSet(Node):
         Node.__init__(self, *sorted(children))
         self.dates = set(children)
 
+    def __add__(self, delta):
+        return DateSet(*(c + delta for c in self.dates))
+
     def toEnglish(self):
         return ", ".join((str(c) for c in self.children))
 
@@ -78,6 +88,9 @@ class Daily(Node):
         self.start = start_date.toordinal()
         self.step = step
         self.phase = self.start % self.step
+
+    def __add__(self, delta):
+        return Daily(self.children[0] + delta, self.step)
 
     def toEnglish(self):
         return "every %d days starting %s" % \
@@ -209,6 +222,9 @@ class Filter(Node):
         self.child = child
         self.args = args
 
+    def __add__(self, delta):
+        return type(self)(self.child + delta, *(c + delta for c in self.args))
+
     def occursOnDate(self, date):
         return self.filter(date) and self.child.occursOnDate(date)
 
@@ -238,9 +254,12 @@ class Until(Filter):
     def filter(self, date):
         return date <= self.args[0]
 
-class For(Node):
+import itertools
 
-    pass
+class For(Filter):
+
+    def untimedOccurrences(self, start, end):
+        return itertools.islice(self.child.untimedOccurrences(start, end), self.args[1])
 
 class Period(Filter):
 
@@ -249,6 +268,11 @@ class Period(Filter):
         self.child = child
         self.start = start
         self.end = end
+
+    def __add__(self, delta):
+        return Period(self.child + delta,
+                      timePlusTimedelta(self.start, delta),
+                      timePlusTimedelta(self.end, delta))
 
     def toEnglish(self):
         if isinstance(self.end, datetime.timedelta):
