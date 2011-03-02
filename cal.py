@@ -340,9 +340,9 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
         cr.restore()
 
-    def draw_event(self, cr, event, day):
+    def draw_event(self, cr, event, period):
         try:
-            area = self.area_from_start_end(event.start, event.end).shrink(2, 0)
+            area = self.area_from_start_end(period.start, period.end).shrink(2, 0)
         except DateNotVisible:
             return
         
@@ -359,19 +359,21 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
            
         self.events[event] = area
 
+    def dates_visible(self):
+        s = datetime.date.fromordinal(int(self.date))
+        e = datetime.date.fromordinal(int(self.date) + self.days_visible())
+        return s, e
+
     def draw_events(self, cr):
         self.events = {}
-        for i in xrange (0, self.days_visible() + 1):
-            for evt in self.get_schedule(self.date + i):
-                self.draw_event(cr, evt, i)
+        for evt, period in self.model.timedOccurrences(*self.dates_visible()):
+            self.draw_event(cr, evt, period)
         cr.restore()
 
     def draw_marquee(self, cr):
         if not self.selection_recurrence:
             return
-        
-        s = datetime.date.fromordinal(int(self.date))
-        e = s + datetime.timedelta(days=self.days_visible())
+        s, e = self.dates_visible()
         for instance in self.selection_recurrence.timedOccurrences(s, e):
 
             try:
@@ -484,9 +486,6 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
         self.selected.description = self.ti.get_text()
         self.changed(False)
-
-    def get_schedule(self, date):
-        return self.model.get_events(date)
 
 class WeekViewItem(goocanvas.Group):
 

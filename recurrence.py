@@ -7,6 +7,9 @@ def dateRange(start, end):
         yield cur
         cur += dt
 
+def fromDateTimes(start, end):
+    return Period(DateSet(start.date()), start.time(), end.time())
+
 class Occurrence(object):
 
     def __init__(self, date, start=None, end=None):
