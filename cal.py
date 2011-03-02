@@ -494,7 +494,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         if not self.editing:
             return
 
-        self.selected.description = self.ti.get_text()
+        self.occurrences[self.selected][0].description = self.ti.get_text()
         self.changed(False)
 
 class WeekViewItem(goocanvas.Group):
