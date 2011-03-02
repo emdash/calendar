@@ -155,9 +155,12 @@ monthnames = [
 class Monthly(Node):
 
     def __init__(self, month, day):
-        Node.__init__(self, day, month)
+        Node.__init__(self, month, day)
         self.day = day
         self.month = month
+
+    def __add__(self, delta):
+        return Offset(self, delta)
 
     def toEnglish(self):
         if not self.month:
@@ -206,6 +209,9 @@ class NthWeekday(Node):
         self.n = n
         self.month = month
         self.days = set(weekdays)
+
+    def __add__(self, delta):
+        return Offset(self, delta)
 
     def toEnglish(self):
         n = toOrdinal(self.n)
@@ -293,6 +299,9 @@ import itertools
 
 class For(Filter):
 
+    def __add__(self, delta):
+        return For(self.child + delta, *self.args)
+
     def untimedOccurrences(self, start, end):
         return itertools.islice(self.child.untimedOccurrences(start, end), self.args[1])
 
@@ -341,10 +350,25 @@ if __name__ == '__main__':
     assert (Weekly(1, 2) + delta ==
             Weekly(2, 3))
 
+    assert (Monthly(10, 31) + delta ==
+            Offset(Monthly(10, 31), delta))
+
+    assert (Monthly(None, 31) + delta ==
+            Offset(Monthly(None, 31), delta))
+
+    assert (Offset(Monthly(None, 31), delta) + delta ==
+            Offset(Monthly(None, 31), datetime.timedelta(days=2, hours=2)))
+
+    assert (NthWeekday(1, None, 4) + delta ==
+            Offset(NthWeekday(1, None, 4), delta))
+
     assert (Until(Daily(datetime.date(2011, 3, 2), 1),
                   datetime.date(2011, 3, 10)) + delta ==
             Until(Daily(datetime.date(2011, 3, 3), 1),
                   datetime.date(2011, 3, 11)))
+
+    assert (For(Daily(datetime.date(2011, 3, 2), 2), 10) + delta ==
+            For(Daily(datetime.date(2011, 3, 3), 2), 10))
 
     assert (Period(DateSet(datetime.date(2011, 3, 2)),
                    datetime.time(15, 45),
