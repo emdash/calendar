@@ -45,6 +45,10 @@ class Occurrence(object):
     def __hash__(self):
         return hash(self.id)
 
+    def __add__(self, delta):
+        return Occurrence(self.id, self.date + delta,
+                          self.start + delta, self.end + delta)
+
 class Node(object):
 
     def __init__(self, *children):
