@@ -179,6 +179,25 @@ def toOrdinal(n):
     else:
         ending = 'th'
     return s + ending
+
+class Offset(Node):
+
+    def __init__(self, child, offset):
+        if isinstance(child, Offset):
+            child = child.child
+            offset = child.offset + offset
+        Node.__init__(self, child, offset)
+        self.child = child
+        self.offset = offset
+
+    def __add__(self, delta):
+        return Offset(self.child, self.offset + delta)
+
+    def untimedOccurrences(self, start, end):
+        return ((c + self.offset for c in self.child.untimedOccurrences(start, end)))
+
+    def timedOccurrences(self, start, end):
+        return ((c + self.offset for c in self.child.timedOccurrences(start, end)))
         
 class NthWeekday(Node):
 
