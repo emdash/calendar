@@ -37,22 +37,23 @@ def timeDeltaToStr(delta):
 class Occurrence(object):
 
     def __init__(self, id, creator, date, start=None, end=None):
-        if start:
+        if start and end:
             self.start = datetime.datetime(
                 date.year,
                 date.month,
                 date.day,
                 start.hour,
                 start.minute)
-        if end and isinstance(end, datetime.time):
             self.end = datetime.datetime(
                 date.year,
                 date.month,
                 date.day,
                 end.hour,
                 end.minute)
-        if start and end:
             self.duration = self.end - self.start
+            self.all_day = False
+        else:
+            self.all_day = True
         self.date = date
         self.id = (creator, id)
         self.creator = creator
