@@ -55,7 +55,7 @@ class Occurrence(object):
             self.end = self.start + end
         self.duration = self.end - self.start
         self.date = date
-        self.id = id
+        self.id = (creator, id)
         self.creator = creator
 
     def __eq__(self, other):
