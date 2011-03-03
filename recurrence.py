@@ -295,16 +295,28 @@ class NthWeekday(Node):
         if month == 2:
             return 29 if ((date.year % 4) == 0) else 28
         return self.last_days.get(month, 31)
-    
+
 class And(Node):
 
-    pass
+    def __init__(self, a, b):
+        Node.__init__(self, a, b)
+        self.a = a
+        self.b = b
+
     def __add__(self, delta):
         return Except(self.a + delta, self.b + delta)
 
     def toEnglish(self):
         return "(%s) and (%s)" % (self.a.toEnglish(), self.b.toEnglish())
 
+    def timedOccurrences(self, start, end):
+        # for now if there are overlapping occurrences in either set,
+        # we return them both. In the future we may wisth to merge
+        # overlapping events together
+        values = list(self.a.timedOccurrences(start, end))
+        values.extend(self.b.timedOccurrences(start, end))
+        values.sort(key=lambda x: x.start)
+        return iter(values)
 
 class Except(Node):
 
@@ -319,6 +331,17 @@ class Except(Node):
     def toEnglish(self):
         return "(%s) except (%s)" % (self.include.toEnglish(), self.exclude.toEnglish())
 
+    def timedOccurrences(self, start, end):
+        # for now we exclude any occurrences which occur on the same
+        # date as an occurrence in our exclusion list. In the future
+        # we may wish to subtract out the intersection of the include
+        # and exclude recurrences.
+        include = list(self.include.timedOccurrences(start, end))
+        include.sort()
+        exclude = set((o.date for o in self.exclude.timedOccurrences(start, end)))
+        for value in include:
+            if not value.date in exclude:
+                yield value
 
 class Filter(Node):
 
