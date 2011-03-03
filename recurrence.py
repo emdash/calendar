@@ -14,6 +14,12 @@ def timePlusTimedelta(time, delta):
     result = datetime.datetime(2011, 3, 2, time.hour, time.minute) + delta
     return result.time()
 
+def dateToStr(date):
+    return "%d/%d/%d" % (date.month, date.day, date.year)
+
+def timeToStr(time):
+    return "%d:%02d" % (time.hour, time.minute)
+
 class Occurrence(object):
 
     def __init__(self, id, date, start=None, end=None):
@@ -86,7 +92,7 @@ class DateSet(Node):
         return DateSet(*(c + delta for c in self.dates))
 
     def toEnglish(self):
-        return ", ".join((str(c) for c in self.children))
+        return ", ".join((dateToStr(c) for c in self.children))
 
     def occursOnDate(self, date):
         return date in self.dates
@@ -107,7 +113,7 @@ class Daily(Node):
 
     def toEnglish(self):
         return "every %d days starting %s" % \
-            (self.step, self.children[0])
+            (self.step, dateToStr(self.children[0]))
 
     def occursOnDate(self, date):
         ord = date.toordinal()
@@ -282,7 +288,7 @@ class Filter(Node):
 class From(Filter):
 
     def toEnglish(self):
-        return "%s from %s" % (self.child.toEnglish(), self.args[0])
+        return "%s from %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
 
     def filter(self, date):
         return date >= self.args[0]
@@ -290,7 +296,7 @@ class From(Filter):
 class Until(Filter):
 
     def toEnglish(self):
-        return "%s until %s" % (self.child.toEnglish(), self.args[0])
+        return "%s until %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
 
     def filter(self, date):
         return date <= self.args[0]
@@ -321,9 +327,9 @@ class Period(Filter):
     def toEnglish(self):
         if isinstance(self.end, datetime.timedelta):
             return "%s at %s for %s" % \
-                (self.child.toEnglish(), self.start, self.end)
+                (self.child.toEnglish(), timeToStr(self.start), timeToStr(self.end))
         return "%s from %s until %s" %\
-            (self.child.toEnglish(), self.start, self.end)
+            (self.child.toEnglish(), timeToStr(self.start), timeToStr(self.end))
     
     def filter(self, date):
         return True
