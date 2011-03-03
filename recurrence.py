@@ -232,9 +232,9 @@ class Offset(Node):
 
     def toEnglish(self):
         if self.offset < datetime.timedelta():
-            fmt = "%s before %s"
+            fmt = "%s before (%s)"
         else:
-            fmt = "%s after %s"
+            fmt = "%s after (%s)"
         return fmt % (timeDeltaToStr(self.offset), self.child.toEnglish())
 
     def __add__(self, delta):
@@ -289,6 +289,12 @@ class NthWeekday(Node):
 class And(Node):
 
     pass
+    def __add__(self, delta):
+        return Except(self.a + delta, self.b + delta)
+
+    def toEnglish(self):
+        return "(%s) and (%s)" % (self.a.toEnglish(), self.b.toEnglish())
+
 
 class Except(Node):
 
@@ -296,6 +302,13 @@ class Except(Node):
         Node.__init__(self, include, exclude)
         self.include = include
         self.exclude = exclude
+
+    def __add__(self, delta):
+        return Except(self.include + delta, self.exclude + delta)
+
+    def toEnglish(self):
+        return "(%s) except (%s)" % (self.include.toEnglish(), self.exclude.toEnglish())
+
 
 class Filter(Node):
 
@@ -323,7 +336,7 @@ class Filter(Node):
 class From(Filter):
 
     def toEnglish(self):
-        return "%s from %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
+        return "(%s) from %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
 
     def filter(self, date):
         return date >= self.args[0]
@@ -331,7 +344,7 @@ class From(Filter):
 class Until(Filter):
 
     def toEnglish(self):
-        return "%s until %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
+        return "(%s) until %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
 
     def filter(self, date):
         return date <= self.args[0]
@@ -344,7 +357,7 @@ class For(Filter):
         return For(self.child + delta, *self.args)
 
     def toEnglish(self):
-        return "%s repeating %d times" % (self.child.toEnglish(), self.args[0])
+        return "(%s) repeating %d times" % (self.child.toEnglish(), self.args[0])
 
     def timedOccurrences(self, start, end):
         return (c for c in self.child.timedOccurrences(start, end) if
@@ -365,9 +378,9 @@ class Period(Filter):
 
     def toEnglish(self):
         if isinstance(self.end, datetime.timedelta):
-            return "%s at %s for %s" % \
+            return "(%s) at %s for %s" % \
                 (self.child.toEnglish(), timeToStr(self.start), timeToStr(self.end))
-        return "%s from %s until %s" %\
+        return "(%s) from %s until %s" %\
             (self.child.toEnglish(), timeToStr(self.start), timeToStr(self.end))
     
     def filter(self, date):
@@ -420,15 +433,15 @@ if __name__ == '__main__':
                    datetime.time(17, 45)))
 
     assert (Offset(Monthly(None, 24), datetime.timedelta(days=1)).toEnglish() ==
-            "1 days after 24 of each month")
+            "1 days after (24 of each month)")
     assert (Offset(Monthly(None, 24), datetime.timedelta(days=-1)).toEnglish() ==
-            "1 days before 24 of each month")
+            "1 days before (24 of each month)")
     assert (Offset(Monthly(None, 24),
                    datetime.timedelta(days=1, hours=1, minutes=1)).toEnglish() ==
-            "1 days, 10 hours and 1 minutes after 24 of each month")
+            "1 days, 10 hours and 1 minutes after (24 of each month)")
 
     assert (NthWeekday(2, None, 2).toEnglish() ==
             "every 2nd wednesday")
 
     assert (For(NthWeekday(2, None, 2), 100).toEnglish() ==
-            "every 2nd wednesday repeating 100 times")
+            "(every 2nd wednesday) repeating 100 times")
