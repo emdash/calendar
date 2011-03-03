@@ -3,6 +3,7 @@ import recurrence as ast
 tokens = (
     'AT',
     'TIME',
+    'DATE',
     'AND',
     'COMMA',
     'EACH',
@@ -52,20 +53,31 @@ t_AFTER = r"after"
 
 import re
 
-timeregex = re.compile(r"(\d\d?)(:\d\d)?(am|pm)?")
-
 def t_MONTH(t):
     r"month"
     return t
 
 def t_TIME(t):
-    r"(\d\d?)(:\d\d)?(am|pm)"
-    h, m, phase = timeregex.match(t.value).groups()
-    h = int(h)
-    m = int(m[1:]) if m else 0
-    if phase == "pm" and h < 12:
-        h += 12
-    t.value = datetime.time(hour = h, minute = m) 
+    r"(\d{1,2})(((:\d{2})(am|pm)?)|(am|pm))"
+    value = t.value.strip("apm").split(":")
+    h = int(value[0])
+    if h < 12 and t.value.endswith("pm"):
+        h = (h + 12) % 24
+    if len(value) == 1:
+        m = 0
+    else:
+        m = int (value[1])
+    t.value = datetime.time(hour=h, minute=m) 
+    return t
+
+
+dateregex = re.compile(r"(\d\d?)[-./](\d\d?)[-./](\d{2,4})")
+
+def t_DATE(t):
+    r"(\d\d?)[-./](\d\d?)[-./](\d{2,4})"
+    # assuming M/D/Y for now
+    m, d, y = dateregex.match(t.value).groups()
+    t.value = datetime.date(int(y), int(m), int(d))
     return t
 
 def t_WEEKDAY(t):
@@ -295,6 +307,10 @@ def p_weekdays_terminal(t):
 
 ## date productions
 
+def p_daate_DATE(t):
+    'date : DATE'
+    t[0] = t[1]
+
 def p_date_today(t):
     'date : TODAY'
     t[0] = datetime.date.today()
@@ -474,7 +490,8 @@ if __name__ == '__main__':
         got = parse(s)
         if not (got == expected):
             print "Expected: %s\nGot: %s" % (expected, got)
-    
+
+    test_parse("10/20/2010", ast.DateSet(datetime.date(2010, 10, 20)))
     test_parse("wed", ast.DateSet(from_day_of_week(2)))
     test_parse("5th", ast.DateSet(make_date(day=5)))
     test_parse("oct 5th and nov 6th",
