@@ -243,9 +243,9 @@ class NthWeekday(Node):
         n = toOrdinal(self.n)
         days = ", ".join((daynames[d] for d in self.days))
         if not self.month:
-            return "%s %s" % (n, days)
+            return "every %s %s" % (n, days)
         else:
-            return "%s %s of each %s" % (n, days, monthnames[month])
+            return "every %s %s of each %s" % (n, days, monthnames[month])
 
     def occursOnDate(self, date):
         if self.month and not date.month == self.month:
