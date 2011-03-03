@@ -134,10 +134,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.ti = TextInput(self.text_changed_cb)
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
-        self.selection_recurrence = recurrence.Period(
-            recurrence.Daily(datetime.date.today(), 2),
-            datetime.time(14),
-            datetime.time(16))
+        self.selection_recurrence = None
 
     def _blink_cursor(self):
         if not self.editing:
