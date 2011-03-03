@@ -420,10 +420,8 @@ class Period(Filter):
         return True
 
     def timedOccurrences(self, start, end):
-        id = 0
         for c in self.child.timedOccurrences(start, end):
-            yield Occurrence(id, self, c, self.start, self.end)
-            id += 1
+            yield Occurrence(self, c, self.start, self.end)
 
 if __name__ == '__main__':
 
