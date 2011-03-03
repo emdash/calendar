@@ -405,3 +405,17 @@ if __name__ == '__main__':
             Period(DateSet(datetime.date(2011, 3, 3)),
                    datetime.time(16, 45),
                    datetime.time(17, 45)))
+
+    assert (Offset(Monthly(None, 24), datetime.timedelta(days=1)).toEnglish() ==
+            "1 days after 24 of each month")
+    assert (Offset(Monthly(None, 24), datetime.timedelta(days=-1)).toEnglish() ==
+            "1 days before 24 of each month")
+    assert (Offset(Monthly(None, 24),
+                   datetime.timedelta(days=1, hours=1, minutes=1)).toEnglish() ==
+            "1 days, 10 hours and 1 minutes after 24 of each month")
+
+    assert (NthWeekday(2, None, 2).toEnglish() ==
+            "every 2nd wednesday")
+
+    assert (For(NthWeekday(2, None, 2), 100).toEnglish() ==
+            "every 2nd wednesday repeating 100 times")
