@@ -272,16 +272,15 @@ class NthWeekday(Node):
             return "every %s %s" % (n, days)
         else:
             return "every %s %s of each %s" % (n, days, monthnames[month])
-
+          
     def occursOnDate(self, date):
         if self.month and not date.month == self.month:
             return False
-        if self.n > 0:
-            return (date.weekday() in self.days) and\
-                (((date.day / 7) + 1) == self.n)
-        else:
-            return (date.weekday() in self.days) and\
-                (((self.last_day(date) - date.day) / 7) + 1 == abs(self.n))
+        first_of_month = datetime.date(date.year, date.month, 1)
+        nth = (date.day / 7)
+        if first_of_month.weekday() <= date.weekday():
+            nth += 1
+        return (nth == self.n) and (date.weekday() in self.days)
 
     last_days = {
         11 : 30,
