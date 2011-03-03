@@ -36,7 +36,7 @@ def timeDeltaToStr(delta):
 
 class Occurrence(object):
 
-    def __init__(self, id, date, start=None, end=None):
+    def __init__(self, id, creator, date, start=None, end=None):
         if start:
             self.start = datetime.datetime(
                 date.year,
@@ -56,6 +56,7 @@ class Occurrence(object):
         self.duration = self.end - self.start
         self.date = date
         self.id = id
+        self.creator = creator
 
     def __eq__(self, other):
         if not other:
@@ -363,7 +364,7 @@ class Period(Filter):
     def timedOccurrences(self, start, end):
         id = 0
         for c in self.child.untimedOccurrences(start, end):
-            yield Occurrence(id, c, self.start, self.end)
+            yield Occurrence(id, self, c, self.start, self.end)
             id += 1
 
 if __name__ == '__main__':

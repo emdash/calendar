@@ -616,18 +616,20 @@ class SetEventStart(MouseCommand):
     def __init__(self, instance, abs):
         self.mdown = abs
         self.instance = instance
-        self.event = instance.selected
-        self.pos = self.event.start
+        occurrence = instance.selected
+        self.recurrence = occurrence.creator
+        self.pos = self.recurrence.start
 
     def do(self):
-        self.event.start = min(
+        self.recurrence.start = min(
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
-                self.shift),
-            self.event.end)
+                self.shift).time(),
+            self.recurrence.end)
+        self.instance.changed(False)
         return True
 
     def undo(self):
-        self.event.start = self.pos
+        self.recurrence.start = self.pos
 
 class SetEventEnd(MouseCommand):
 
@@ -638,14 +640,16 @@ class SetEventEnd(MouseCommand):
     def __init__(self, instance, abs):
         self.mdown = abs
         self.instance = instance
-        self.event = instance.selected
-        self.pos = self.event.end
+        occurrence = instance.selected
+        self.recurrence = occurrence.creator
+        self.pos = self.recurrence.start
 
     def do(self):
-        self.event.end = max(
+        self.recurrence.end = max(
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
-                self.shift),
-            self.event.start)
+                self.shift).time(),
+            self.recurrence.start)
+        self.instance.changed(False)
         return True
 
     def undo(self):
