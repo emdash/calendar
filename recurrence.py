@@ -124,8 +124,10 @@ class Node(object):
         raise NotImplemented
 
     def timedOccurrences(self, start, end):
-        return (Occurrence(self, 0, date) for date in dateRange(start, end) if self.occursOnDate(date))
-
+        for date in dateRange(start, end):
+            if self.occursOnDate(date):
+                yield Occurrence(self, date)
+                
 class DateSet(Node):
 
     def __init__(self, *children):
@@ -140,9 +142,6 @@ class DateSet(Node):
 
     def occursOnDate(self, date):
         return date in self.dates
-
-    def timedOccurrences(self, start, end):
-        return (c for c in self.children if start <= c <= end)
 
 class Daily(Node):
 
@@ -262,7 +261,7 @@ class NthWeekday(Node):
         self.n = n
         self.month = month
         self.days = set(weekdays)
-
+        
     def __add__(self, delta):
         return Offset(self, delta)
 
