@@ -51,12 +51,31 @@ class Occurrence(object):
                 date.day,
                 end.hour,
                 end.minute)
-        else:
-            self.end = self.start + end
-        self.duration = self.end - self.start
+        if start and end:
+            self.duration = self.end - self.start
         self.date = date
         self.id = (creator, id)
         self.creator = creator
+
+    @property
+    def year(self):
+        return self.date.year
+
+    @property
+    def month(self):
+        return self.date.month
+
+    @property
+    def day(self):
+        return self.date.day
+
+    @property
+    def hour(self):
+        return self.date.hour
+
+    @property
+    def minute(self):
+        return self.date.minute
 
     def __eq__(self, other):
         if not other:
