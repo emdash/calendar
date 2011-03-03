@@ -723,7 +723,7 @@ class DelEvent(MenuCommand):
 
     def configure(self):
         self.selected = self.app.weekview.selected
-        self.event = self.app.weekview.occurrence[self.selected][0]
+        self.event = self.app.weekview.occurrences[self.selected][0]
 
     def do(self):
         self.app.model.del_event(self.event)
