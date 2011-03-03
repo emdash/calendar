@@ -36,7 +36,7 @@ def timeDeltaToStr(delta):
 
 class Occurrence(object):
 
-    def __init__(self, creator, date, start=None, end=None):
+    def __init__(self, ordinal, creator, date, start=None, end=None):
         if start and end:
             self.start = datetime.datetime(
                 date.year,
@@ -68,6 +68,7 @@ class Occurrence(object):
         self.duration = self.end - self.start
         self.date = date
         self.id = (self.start, self.end)
+        self.ordinal = ordinal
         self.creator = creator
 
     @property
@@ -109,11 +110,12 @@ class Occurrence(object):
         return hash(self.id)
 
     def __add__(self, delta):
-        return Occurrence(self.creator, self.date + delta,
+        return Occurrence(self.ordinal, self.creator, self.date + delta,
                           self.start + delta, self.end + delta)
 
-    def clone(self, creator=None, date=None, start=None, end=None):
-        return Occurrence(creator if creator else self.creator,
+    def clone(self, ordinal=None, creator=None, date=None, start=None, end=None):
+        return Occurrence(ordinal if ordinal else self.ordinal,
+                          creator if creator else self.creator,
                           date if date else self.date,
                           start if start else self.start,
                           end if end else self.end)
@@ -139,10 +141,17 @@ class Node(object):
     def occursOnDate(self, date):
         raise NotImplemented
 
+    def ordinal(self, date):
+        raise NotImplemented
+
     def timedOccurrences(self, start, end):
+        count = None
         for date in dateRange(start, end):
             if self.occursOnDate(date):
-                yield Occurrence(self, date)
+                if count is None:
+                    count = self.ordinal(date)
+                yield Occurrence(count, self, date)
+                count += 1
                 
 class DateSet(Node):
 
@@ -155,6 +164,9 @@ class DateSet(Node):
 
     def toEnglish(self):
         return ", ".join((dateToStr(c) for c in self.children))
+
+    def ordinal(self, date):
+        return self.children.index(date)
 
     def occursOnDate(self, date):
         return date in self.dates
@@ -173,6 +185,9 @@ class Daily(Node):
     def toEnglish(self):
         return "every %d days starting %s" % \
             (self.step, dateToStr(self.children[0]))
+
+    def ordinal(self, date):
+        return (date.toordinal() - self.start) / self.step
 
     def occursOnDate(self, date):
         ord = date.toordinal()
@@ -199,6 +214,13 @@ class Weekly(Node):
 
     def toEnglish(self):
         return ", ".join((daynames[d] for d in self.days))
+
+    def ordinal(self, date):
+        days = [1 if (d in self.days) else 0 for d in range(7)]
+        ordinal = date.toordinal()
+        ordinals_per_week = len(days)
+        base = ((ordinal / 7) - 1) * ordinals_per_week
+        return base + sum(days[date.weekday():])
 
     def occursOnDate(self, date):
         return date.weekday() in self.days
@@ -232,6 +254,14 @@ class Monthly(Node):
             return "%d of each month" % self.day
         else:
             return "%d of each %s" % (self.day, monthnames[self.month])
+
+    def ordinal(self, date):
+        if self.month:
+            return date.year
+
+        # note: no handling of leap years, or when day > 28
+        return ((date.year - 1) * 12 + (date.month - 2) +
+                (1 if date.day >= self.day else 0))
 
     def occursOnDate(self, date):
         if not self.month:
@@ -287,8 +317,35 @@ class NthWeekday(Node):
         if not self.month:
             return "every %s %s" % (n, days)
         else:
-            return "every %s %s of each %s" % (n, days, monthnames[month])
-          
+            return "every %s %s of each %s" % (n, days, monthnames[month])          
+
+    def ordinal(self, date):
+        def weekdays_in_month(weekday, month, year):
+            first = datetime.date(year, month, 1)
+            last = datetime.date(year, month, (self.last_day_year_month(year, month) / 7))
+            base = 3
+            if first.weekday() <= weekday:
+                base += 1
+            if last.weekday() >= weekday:
+                base += 1
+
+        if self.month:
+            count = 0
+            for year in xrange(1, date.year):
+                for day in self.days:
+                    if abs(self.n) <= weekdays_in_month(day, self.month, year):
+                        count += 1
+            return count
+
+
+        count = 0
+        for year in xrange(1, date.year):
+            for month in xrange(1, date.month):
+                for day in self.days:
+                    if abs(self.n) <= weekdays_in_month(day, month, year):
+                        count += 1
+        return count
+        
     def occursOnDate(self, date):
         if self.month and not date.month == self.month:
             return False
@@ -312,6 +369,12 @@ class NthWeekday(Node):
             return 29 if ((date.year % 4) == 0) else 28
         return self.last_days.get(month, 31)
 
+
+    def last_day_year_month(self, year, month):
+        if month == 2:
+            return 29 if ((year % 4) == 0) else 28
+        return self.last_days.get(month, 31)
+    
 class And(Node):
 
     def __init__(self, a, b):
@@ -329,10 +392,11 @@ class And(Node):
         # for now if there are overlapping occurrences in either set,
         # we return them both. In the future we may wisth to merge
         # overlapping events together
-        values = list(self.a.timedOccurrences(start, end))
-        values.extend(self.b.timedOccurrences(start, end))
+        values = list((v.clone(ordinal=(0, v.ordinal)) for v in self.a.timedOccurrences(start, end)))
+        values.extend((v.clone(ordinal=(1, v.ordinal)) for v in self.b.timedOccurrences(start, end)))
         values.sort(key=lambda x: x.start)
         return iter(values)
+
 
 class Except(Node):
 
@@ -434,7 +498,7 @@ class Period(Filter):
 
     def timedOccurrences(self, start, end):
         for c in self.child.timedOccurrences(start, end):
-            yield Occurrence(self, c.date, self.start, self.end)
+            yield c.clone(creator=self, start=self.start, end=self.end)
 
 if __name__ == '__main__':
 
