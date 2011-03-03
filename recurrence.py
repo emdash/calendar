@@ -110,11 +110,8 @@ class Node(object):
     def occursOnDate(self, date):
         raise NotImplemented
 
-    def untimedOccurrences(self, start, end):
-        return (date for date in dateRange(start, end) if self.occursOnDate(date))
-
     def timedOccurrences(self, start, end):
-        return ()
+        return (Occurrence(self, 0, date) for date in dateRange(start, end) if self.occursOnDate(date))
 
 class DateSet(Node):
 
@@ -131,7 +128,7 @@ class DateSet(Node):
     def occursOnDate(self, date):
         return date in self.dates
 
-    def untimedOccurrences(self, start, end):
+    def timedOccurrences(self, start, end):
         return (c for c in self.children if start <= c <= end)
 
 class Daily(Node):
@@ -242,9 +239,6 @@ class Offset(Node):
     def __add__(self, delta):
         return Offset(self.child, self.offset + delta)
 
-    def untimedOccurrences(self, start, end):
-        return ((c + self.offset for c in self.child.untimedOccurrences(start, end)))
-
     def timedOccurrences(self, start, end):
         return ((c + self.offset for c in self.child.timedOccurrences(start, end)))
         
@@ -317,7 +311,7 @@ class Filter(Node):
 
     def timedOccurrences(self, start, end):
         return (p for p in self.child.timedOccurrences(start, end)
-                if self.filterPeriod(c))
+                if self.filterPeriod(p))
 
     def filter(self, date):
         raise NotImplemented
@@ -351,8 +345,9 @@ class For(Filter):
     def toEnglish(self):
         return "%s repeating %d times" % (self.child.toEnglish(), self.args[0])
 
-    def untimedOccurrences(self, start, end):
-        return itertools.islice(self.child.untimedOccurrences(start, end), self.args[1])
+    def timedOccurrences(self, start, end):
+        return (c for c in self.child.timedOccurrences(start, end) if
+                c.id < self.args[0])
 
 class Period(Filter):
 
@@ -377,12 +372,9 @@ class Period(Filter):
     def filter(self, date):
         return True
 
-    def untimedOccurrences(self, start, end):
-        return ()
-    
     def timedOccurrences(self, start, end):
         id = 0
-        for c in self.child.untimedOccurrences(start, end):
+        for c in self.child.timedOccurrences(start, end):
             yield Occurrence(id, self, c, self.start, self.end)
             id += 1
 
