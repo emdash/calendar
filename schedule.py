@@ -1,5 +1,6 @@
 import datetime
 import recurrence
+import parser
 
 def eventFromStartEnd(start, end, description):
     return Event(recurrence.fromDateTimes(start, end), description)
@@ -82,22 +83,18 @@ class Schedule(object):
         try:
             data = open(path, "r").readlines()
             for line in data:
-                start, end, description = line.split(",")
-                start = self._datetime_from_string(start)
-                end = self._datetime_from_string(end)
-                self.add_event(eventFromStartEnd(start, end, description.strip()))
+                recurrence, description = line.split("|")
+                self.add_event(Event(parser.parse(recurrence), description.strip()))
         except IOError:
             pass
 
     def save(self, path):
-        return
         dest = open(path, "w")
         for event in self.events:
             self._save_event(dest, event)
 
     def _save_event(self, dest, event):
-        print >> dest, ",".join((self._datetime_to_string(event.start),
-                                self._datetime_to_string(event.end),
+        print >> dest, "|".join((event.recurrence.toEnglish(),
                                 event.description))
 
     def _datetime_to_string(self, datetime):
