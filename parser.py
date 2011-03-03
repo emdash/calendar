@@ -281,7 +281,7 @@ def p_duration_days(t):
     t[0] = datetime.timedelta(days=t[1])
 
 def p_duration_duration_and_duration(t):
-    '''duration : duration AND duration'''
+    '''duration : duration and duration'''
     t[0] = t[1] + t[3]
     
 ## weekdays
@@ -551,3 +551,7 @@ if __name__ == '__main__':
 
     test_parse("1 day after 21st of each month",
                 ast.Offset(ast.Monthly(None, 21), datetime.timedelta(days=1)))
+
+    test_parse("1 day, 1 hour and 1 minute before every 2nd wednesday",
+               ast.Offset(ast.NthWeekday(2, None, 2),
+                          -datetime.timedelta(days=1, hours=1, minutes=1)))
