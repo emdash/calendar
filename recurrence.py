@@ -427,6 +427,88 @@ if __name__ == '__main__':
 
     delta = datetime.timedelta(days=1, hours=1)
 
+    ## test generated dates
+    
+    daterange = (datetime.date(2011, 3, 1), datetime.date(2011, 3, 10))
+
+    def all_day(dates):
+        return [(datetime.datetime(d.year, d.month, d.day, 0, 0),
+                 datetime.datetime(d.year, d.month, d.day, 23, 59)) for d in dates]
+
+    def test_range(recurrence, daterange, expected, ordinal=0):
+        values = [(o.start, o.end) for o in recurrence.timedOccurrences(*daterange)]
+        if not values == expected:
+            print "failure: ", str(recurrence)
+            print "exp: ", [(str(a), str(b)) for a, b in expected]
+            print "got: ", [(str(a), str(b)) for a, b in values]
+
+    test_range(DateSet(datetime.date(2011, 3, 1), datetime.date(2011, 3, 5),
+                       datetime.date(2011, 3, 10)),
+               daterange,
+               all_day([datetime.date(2011, 3, 1),
+                datetime.date(2011, 3, 5),
+                datetime.date(2011, 3, 10)]))
+
+    test_range(DateSet(datetime.date(2011, 2, 25),
+                       datetime.date(2011, 2, 28),
+                       datetime.date(2011, 3, 5),
+                       datetime.date(2011, 3, 7),
+                       datetime.date(2011, 3, 15)),
+               daterange,
+               all_day([datetime.date(2011, 3, 5),
+                datetime.date(2011, 3, 7)]))
+    
+    test_range(Daily(datetime.date(2011, 2, 25), 2),
+               daterange,
+               all_day([datetime.date(2011, 3, 1),
+                datetime.date(2011, 3, 3),
+                datetime.date(2011, 3, 5),
+                datetime.date(2011, 3, 7),
+                datetime.date(2011, 3, 9)]))
+
+    test_range(Weekly(0, 2),
+               daterange,
+               all_day([datetime.date(2011, 3, 2),
+                datetime.date(2011, 3, 7),
+                datetime.date(2011, 3, 9)]))
+
+    test_range(Monthly(None, 5),
+               daterange,
+               all_day([datetime.date(2011, 3, 5)]))
+
+    test_range(NthWeekday(2, None, 0, 2),
+               daterange,
+               all_day([datetime.date(2011, 3, 9)]))
+
+    test_range(And(Weekly(0, 2, 4), DateSet(datetime.date(2011, 3, 8))),
+               daterange,
+               all_day([datetime.date(2011, 3, 2),
+                datetime.date(2011, 3, 4),
+                datetime.date(2011, 3, 7),
+                datetime.date(2011, 3, 8),
+                datetime.date(2011, 3, 9)]))
+
+    test_range(Except(Daily(datetime.date(2011, 2, 28), 2), Weekly(1)),
+               daterange,
+               all_day([datetime.date(2011, 3, 2),
+                datetime.date(2011, 3, 4),
+                datetime.date(2011, 3, 6),
+                datetime.date(2011, 3, 10)]))
+
+    test_range(Period(Daily(datetime.date(2011, 2, 28), 3),
+                      datetime.time(16, 35),
+                      datetime.time(17, 45)),
+               daterange,
+               [(datetime.datetime(2011, 3, 3, 16, 35),
+                 datetime.datetime(2011, 3, 3, 17, 45)),
+                (datetime.datetime(2011, 3, 6, 16, 35),
+                 datetime.datetime(2011, 3, 6, 17, 45)),
+                (datetime.datetime(2011, 3, 9, 16, 35),
+                 datetime.datetime(2011, 3, 9, 17, 45))])
+                      
+  
+    ## test addition operator
+
     assert (DateSet(datetime.date(2011, 3, 2)) + delta ==
             DateSet(datetime.date(2011, 3, 3)))
 
