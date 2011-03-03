@@ -260,13 +260,17 @@ def p_duration_hours_minutes(t):
     '''duration : CARDINAL HOURS CARDINAL MINUTES'''
     t[0] = datetime.timedelta(hours=t[1], minutes=t[3])
     
-def p_duration_hours_and_minutes(t):
-    '''duration : CARDINAL HOURS and CARDINAL MINUTES'''
-    t[0] = datetime.timedelta(hours=t[1], minutes=t[4])
-
 def p_duration_minutes(t):
     '''duration : CARDINAL MINUTES'''
     t[0] = datetime.timedelta(minutes=t[1])
+
+def p_duration_days(t):
+    '''duration : CARDINAL DAY'''
+    t[0] = datetime.timedelta(days=t[1])
+
+def p_duration_duration_and_duration(t):
+    '''duration : duration AND duration'''
+    t[0] = t[1] + t[3]
     
 ## weekdays
 
