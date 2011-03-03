@@ -36,7 +36,7 @@ def timeDeltaToStr(delta):
 
 class Occurrence(object):
 
-    def __init__(self, id, creator, date, start=None, end=None):
+    def __init__(self, creator, date, start=None, end=None):
         if start and end:
             self.start = datetime.datetime(
                 date.year,
@@ -53,9 +53,21 @@ class Occurrence(object):
             self.duration = self.end - self.start
             self.all_day = False
         else:
+            self.start = datetime.datetime(
+                date.year,
+                date.month,
+                date.day,
+                0,
+                0)
+            self.end = datetime.datetime(
+                date.year,
+                date.month,
+                date.day,
+                23,
+                59)
             self.all_day = True
         self.date = date
-        self.id = (creator, id)
+        self.id = (self.start, self.end, creator)
         self.creator = creator
 
     @property
@@ -78,16 +90,16 @@ class Occurrence(object):
     def minute(self):
         return self.date.minute
 
-    def __eq__(self, other):
+    def __cmp__(self, other):
         if not other:
             return False
-        return self.id == other.id
+        return cmp(self.id, other.id)
 
     def __hash__(self):
         return hash(self.id)
 
     def __add__(self, delta):
-        return Occurrence(self.id, self.creator, self.date + delta,
+        return Occurrence(self.ordinal, self.creator, self.date + delta,
                           self.start + delta, self.end + delta)
 
 class Node(object):
