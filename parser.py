@@ -33,6 +33,8 @@ tokens = (
     'RPAREN',
     'HOURS',
     'MINUTES',
+    'BEFORE',
+    'AFTER'
     )
 
 t_AT = r"@|at"
@@ -45,6 +47,8 @@ t_EXCEPT = r"but|except"
 t_FOR = r"for"
 t_HOURS = r"hours?"
 t_MINUTES = r"minutes?"
+t_BEFORE = r"before"
+t_AFTER = r"after"
 
 import re
 
@@ -422,6 +426,14 @@ def p_datetimeset_group(t):
     '''datetimeset : LPAREN datetimeset RPAREN'''
     t[0] = t[2]
 
+def p_datetimeset_before(t):
+    '''datetimeset : duration BEFORE datetimeset'''
+    t[0] = ast.Offset(t[3], -t[1])
+
+def p_datetimeset_after(t):
+    '''datetimeset : duration AFTER datetimeset'''
+    t[0] = ast.Offset(t[3], t[1])
+
 def p_period_time_duration(t):
     '''period : TIME FOR duration
               | TIME until TIME'''
@@ -512,3 +524,9 @@ if __name__ == '__main__':
     test_parse("every 2 days for 3 weeks",
                ast.Until(ast.Daily(datetime.date.today(), 2),
                          datetime.date.today() + datetime.timedelta(days=21)))
+
+    test_parse("1 day before 21st of each month",
+               ast.Offset(ast.Monthly(None, 21), datetime.timedelta(days=-1)))
+
+    test_parse("1 day after 21st of each month",
+                ast.Offset(ast.Monthly(None, 21), datetime.timedelta(days=1)))
