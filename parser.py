@@ -88,6 +88,7 @@ def t_WEEKDAY(t):
         r"|thursday"
         r"|friday"
         r"|saturday"
+        r"|sunday"
         r"|sun"
         r"|mon"
         r"|tue"
