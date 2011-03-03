@@ -194,11 +194,10 @@ class Monthly(Node):
         else:
             return (date.day == self.day) and (date.month == self.month)
 
-        
 def toOrdinal(n):
     s = str(n)
-    if s[-1] < '4':
-        ending = ['st', 'nd', 'rd'][s[-1]]
+    if 0 < int(s[-1]) < 4:
+        ending = ['st', 'nd', 'rd'][int(s[-1]) - 1]
     else:
         ending = 'th'
     return s + ending
