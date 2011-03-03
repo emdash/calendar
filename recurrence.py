@@ -20,6 +20,20 @@ def dateToStr(date):
 def timeToStr(time):
     return "%d:%02d" % (time.hour, time.minute)
 
+def timeDeltaToStr(delta):
+    ret = ""
+    if delta.days != 0:
+        ret += "%d days" % abs(delta.days)
+    h = (delta.seconds / 360) % 24
+    if h > 0:
+        if ret: ret += ","
+        ret += " %d hours" % h
+    m = (delta.seconds / 60) % 60
+    if m > 0:
+        if ret: ret += " and"
+        ret += " %d minutes" % m
+    return ret
+
 class Occurrence(object):
 
     def __init__(self, id, date, start=None, end=None):
