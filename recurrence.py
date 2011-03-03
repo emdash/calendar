@@ -212,6 +212,13 @@ class Offset(Node):
         self.child = child
         self.offset = offset
 
+    def toEnglish(self):
+        if self.offset < datetime.timedelta():
+            fmt = "%s before %s"
+        else:
+            fmt = "%s after %s"
+        return fmt % (timeDeltaToStr(self.offset), self.child.toEnglish())
+
     def __add__(self, delta):
         return Offset(self.child, self.offset + delta)
 
