@@ -321,6 +321,9 @@ class For(Filter):
     def __add__(self, delta):
         return For(self.child + delta, *self.args)
 
+    def toEnglish(self):
+        return "%s repeating %d times" % (self.child.toEnglish(), self.args[0])
+
     def untimedOccurrences(self, start, end):
         return itertools.islice(self.child.untimedOccurrences(start, end), self.args[1])
 
