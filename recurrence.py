@@ -67,7 +67,7 @@ class Occurrence(object):
                 59)
             self.all_day = True
         self.date = date
-        self.id = (self.start, self.end, creator)
+        self.id = (self.start, self.end)
         self.creator = creator
 
     @property
