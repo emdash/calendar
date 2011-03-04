@@ -437,7 +437,7 @@ class Period(Filter):
 
     def timedOccurrences(self, start, end):
         for c in self.child.timedOccurrences(start, end):
-            yield Occurrence(self, c, self.start, self.end)
+            yield Occurrence(self, c.date, self.start, self.end)
 
 if __name__ == '__main__':
 
