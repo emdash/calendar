@@ -40,17 +40,14 @@ import parser
 import os
 import time
 
-#TODO: repeating events
 #TODO: event alarms
 #TODO: sync with google calendar
 #TODO: sync with facebook calendar
 #TODO: sync with evolution ??
-#TODO: message area (gtk-info bar?)
 #TODO: go to next {week, month}
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: change cursors
 #TODO: port away from goocanvas ?
-#TODO: allow multiple selections
 #TODO: do something sane when events overlap
 #TODO: specify working day (hide unused hours)
 #TODO: tomboy integration
