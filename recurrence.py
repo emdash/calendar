@@ -176,7 +176,7 @@ class Daily(Node):
 
     def occursOnDate(self, date):
         ord = date.toordinal()
-        return ord >= self.start and ((ord - self.start) % self.step) == 0
+        return ord >= self.start and (((ord - self.start) % self.step) == 0)
 
 daynames = [
     "monday",
