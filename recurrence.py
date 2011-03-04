@@ -374,29 +374,26 @@ class Filter(Node):
 
     def timedOccurrences(self, start, end):
         return (p for p in self.child.timedOccurrences(start, end)
-                if self.filterPeriod(p))
+                if self.filter(p))
 
-    def filter(self, date):
+    def filter(self, period):
         raise NotImplemented
-
-    def filterPeriod(self, period):
-        return self.filter(period.date)
 
 class From(Filter):
 
     def toEnglish(self):
         return "(%s) from %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
 
-    def filter(self, date):
-        return date >= self.args[0]
+    def filter(self, period):
+        return period.date >= self.args[0]
 
 class Until(Filter):
 
     def toEnglish(self):
         return "(%s) until %s" % (self.child.toEnglish(), dateToStr(self.args[0]))
 
-    def filter(self, date):
-        return date <= self.args[0]
+    def filter(self, period):
+        return period.date <= self.args[0]
 
 import itertools
 
