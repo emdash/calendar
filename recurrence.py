@@ -50,7 +50,6 @@ class Occurrence(object):
                 date.day,
                 end.hour,
                 end.minute)
-            self.duration = self.end - self.start
             self.all_day = False
         else:
             self.start = datetime.datetime(
@@ -66,6 +65,7 @@ class Occurrence(object):
                 23,
                 59)
             self.all_day = True
+        self.duration = self.end - self.start
         self.date = date
         self.id = (self.start, self.end)
         self.creator = creator
