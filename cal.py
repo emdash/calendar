@@ -574,7 +574,6 @@ class SelectRecurrence(Command):
         self.app = app
         self.selected = app.weekview.selected
         self.old = app.weekview.selection_recurrence
-
         self.new = parser.parse(text)
         self.do()
 
