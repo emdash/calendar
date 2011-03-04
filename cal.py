@@ -38,6 +38,7 @@ import settings
 import shapes
 import parser
 import os
+import time
 
 #TODO: repeating events
 #TODO: event alarms
@@ -881,7 +882,10 @@ class App(object):
         vbox.pack_start (hbox, True, True)
         toolbar = uiman.get_widget("/lowerToolbar")
 
-        self.selection_entry = gtk.Entry()
+        self.selection_buffer = gtk.TextBuffer()
+        self.selection_buffer.create_tag("error",
+                                         underline=pango.UNDERLINE_SINGLE)
+        self.selection_entry = gtk.TextView(self.selection_buffer)
         
         self.pack_toolbar_widget(toolbar, self.selection_entry)
         vbox.pack_start (toolbar, False, False)
@@ -893,8 +897,7 @@ class App(object):
         self.weekview.connect("notify::selection_recurrence", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
-        self.selection_entry.connect("activate", self.selection_entry_activate_cb)
-        self.selection_entry.connect("changed", self.selection_entry_changed_cb)
+        self.selection_entry.connect("key-press-event", self.selection_entry_changed_cb)
 
     def pack_toolbar_widget(self, toolbar, widget):
         toolitem = gtk.ToolItem()
@@ -904,19 +907,40 @@ class App(object):
         toolitem.show()
         toolbar.add(toolitem)
 
+    idle_timeout = 1000
+    last_keypress = 0
+    dirty = False
     dont_update_entry = False
 
-    def selection_entry_activate_cb(self, entry):
-        self.dont_update_entry = True
-        try:
-            self.undo.commit(SelectRecurrence(self, self.selection_entry.get_text()))
-        except Exception, e:
-            print e
-            self.selection_entry.set_icon_from_stock(1, gtk.STOCK_DIALOG_WARNING)
-        self.dont_update_entry = False
+    def selection_entry_changed_cb(self, entry, event):
+        self.last_keypress = time.time()
+        self.dirty = True
+        self._parse_text()
 
-    def selection_entry_changed_cb(self, entry):
-        self.selection_entry.set_icon_from_stock(1, None)
+    def _parse_text(self):
+        if not self.dirty:
+            return
+
+        self.dont_update_entry = True
+        self.dirty = False
+        b = self.selection_buffer
+        
+        try:
+            text = b.get_text(b.get_start_iter(), b.get_end_iter())
+            self.undo.commit(SelectRecurrence(self, text))
+            b.remove_all_tags(b.get_start_iter(), b.get_end_iter())
+        except parser.ParseError, e:
+            self.selection_entry_error(e.position)
+        self.dont_update_entry = False
+        return False
+
+    def selection_entry_error(self, pos=None):
+        b = self.selection_buffer
+        if not pos is None:
+            b.remove_all_tags(b.get_start_iter(), b.get_end_iter())
+            b.apply_tag_by_name("error",
+                                b.get_iter_at_offset(pos),
+                                b.get_end_iter())
 
     def update_scroll_pos(self, scrollbar):
         self.weekview.y_scroll_offset = -scrollbar.get_value()
@@ -939,7 +963,7 @@ class App(object):
             text = self.weekview.selection_recurrence.toEnglish()
         else:
             text = ""
-        self.selection_entry.set_text(text)
+        self.selection_buffer.set_text(text)
             
     def run(self):
         self.load()
