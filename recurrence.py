@@ -90,11 +90,21 @@ class Occurrence(object):
     def minute(self):
         return self.date.minute
 
-    def __cmp__(self, other):
-        if not other:
+    def __eq__(self, other):
+        if other == None:
             return False
-        return cmp(self.id, other.id)
+        return self.id == other.id
 
+    def __lt__(self, other):
+        if other == None:
+            return False
+        return self.id < other.id
+
+    def __gt__(self, other):
+        if other == None:
+            return False
+        return self.id > other.id
+    
     def __hash__(self):
         return hash(self.id)
 
