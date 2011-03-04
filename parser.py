@@ -166,8 +166,13 @@ t_RPAREN = r'\)'
 
 t_ignore = " \t"
 
+class ParseError(Exception):
+
+    def __init__(self, position=None):
+        self.position = position
+
 def t_error(t):
-    print ("Illegal character '%s'" % t.value[0])
+    raise ParseError(t.lexpos)
 
 import ply.lex as lex
 lex.lex()
@@ -475,7 +480,11 @@ def p_datetimeset_at_time_for_duration(t):
     t[0] = ast.And(*periods) if len(periods) > 1 else periods[0]
 
 def p_error(t):
-    print("Syntax error at '%s'" % t.value)
+    if t:
+        pos = t.lexpos
+    else:
+        pos = None
+    raise ParseError(pos)
 
 start = 'datetimeset'
 
