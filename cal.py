@@ -369,6 +369,9 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
     def draw_events(self, cr):
         self.occurrences = {}
         for evt, period in self.model.timedOccurrences(*self.dates_visible()):
+            if period.all_day:
+                print evt.recurrence.toEnglish()
+                continue
             self.draw_event(cr, evt, period)
         cr.restore()
 
