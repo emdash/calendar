@@ -622,6 +622,7 @@ class SetEventStart(MouseCommand):
     def __init__(self, instance, abs):
         self.mdown = abs
         self.instance = instance
+        self.selected = instance.selected
         occurrence = instance.selected
         self.recurrence = occurrence.creator
         self.pos = self.recurrence.start
