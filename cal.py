@@ -593,6 +593,7 @@ class MoveEvent(MouseCommand):
 
     def __init__(self, instance, event, abs):
         self.instance = instance
+        self.selected = instance.selected
         self.mdown = abs
         self.old = event.recurrence
         self.event = event
@@ -602,10 +603,12 @@ class MoveEvent(MouseCommand):
         x, y = self.rel
         delta = self.instance.point_to_timedelta(int(x + self.offset), y, self.shift)
         self.event.recurrence = self.old + delta
+        self.instance.selected = self.selected + delta
         return True
 
     def undo(self):
         self.event.recurrence = self.old
+        self.instance.selected = self.selected
 
 class SetEventStart(MouseCommand):
 
@@ -625,11 +628,13 @@ class SetEventStart(MouseCommand):
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
                 self.shift).time(),
             self.recurrence.end)
+        self.instance.selected = self.selected.clone(start=self.recurrence.start)
         self.instance.changed(False)
         return True
 
     def undo(self):
         self.recurrence.start = self.pos
+        self.selected = self.selected
 
 class SetEventEnd(MouseCommand):
 
@@ -640,6 +645,7 @@ class SetEventEnd(MouseCommand):
     def __init__(self, instance, abs):
         self.mdown = abs
         self.instance = instance
+        self.selected = instance.selected
         occurrence = instance.selected
         self.recurrence = occurrence.creator
         self.pos = self.recurrence.start
@@ -649,6 +655,7 @@ class SetEventEnd(MouseCommand):
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
                 self.shift).time(),
             self.recurrence.start)
+        self.instance.selected = self.selected.clone(end=self.recurrence.end)
         self.instance.changed(False)
         return True
 
