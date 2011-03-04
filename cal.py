@@ -606,7 +606,8 @@ class MoveEvent(MouseCommand):
         x, y = self.rel
         delta = self.instance.point_to_timedelta(int(x + self.offset), y, self.shift)
         self.event.recurrence = self.old + delta
-        self.instance.selected = self.selected + delta
+        if self.instance.selected:
+            self.instance.selected = self.selected + delta
         return True
 
     def undo(self):
