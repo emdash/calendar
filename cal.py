@@ -897,7 +897,7 @@ class App(object):
         self.weekview.connect("notify::selection_recurrence", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
-        self.selection_entry.connect("key-press-event", self.selection_entry_changed_cb)
+        self.selection_entry.connect("key-release-event", self.selection_entry_changed_cb)
 
     def pack_toolbar_widget(self, toolbar, widget):
         toolitem = gtk.ToolItem()
