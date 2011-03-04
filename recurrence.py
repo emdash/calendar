@@ -478,6 +478,19 @@ if __name__ == '__main__':
                 datetime.date(2011, 3, 5),
                 datetime.date(2011, 3, 7),
                 datetime.date(2011, 3, 9)]))
+    
+    test_range(Daily(datetime.date(2011, 2, 25), 3),
+               daterange,
+               all_day([datetime.date(2011, 3, 3),
+                datetime.date(2011, 3, 6),
+                datetime.date(2011, 3, 9)]))
+
+    test_range(Daily(datetime.date(2011, 2, 26), 3),
+               daterange,
+               all_day([datetime.date(2011, 3, 1),
+                        datetime.date(2011, 3, 4),
+                        datetime.date(2011, 3, 7),
+                        datetime.date(2011, 3, 10)]))
 
     test_range(Weekly(0, 2),
                daterange,
