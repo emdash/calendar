@@ -112,6 +112,12 @@ class Occurrence(object):
         return Occurrence(self.creator, self.date + delta,
                           self.start + delta, self.end + delta)
 
+    def clone(self, creator=None, date=None, start=None, end=None):
+        return Occurrence(creator if creator else self.creator,
+                          date if date else self.date,
+                          start if start else self.start,
+                          end if end else self.end)
+
 class Node(object):
 
     def __init__(self, *children):
