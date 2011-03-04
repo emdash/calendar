@@ -109,7 +109,7 @@ class Occurrence(object):
         return hash(self.id)
 
     def __add__(self, delta):
-        return Occurrence(self.ordinal, self.creator, self.date + delta,
+        return Occurrence(self.creator, self.date + delta,
                           self.start + delta, self.end + delta)
 
 class Node(object):
