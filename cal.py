@@ -51,6 +51,12 @@ import time
 #TODO: do something sane when events overlap
 #TODO: specify working day (hide unused hours)
 #TODO: tomboy integration
+#TODO: parser: ignore words like 'the'
+#TODO: implement month view
+#TODO: allow changing event recurrence textually
+#TODO: remove the selection marquee, replace with a 'temporary event'
+#      clicking creates an event with a default duration
+#      clicking and dragging creates an event over the specified area (min 15 min)
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
