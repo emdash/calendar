@@ -615,6 +615,22 @@ class SelectRecurrence(Command):
         self.app.weekview.selected = self.selected
         self.app.weekview.selection_recurrence = self.old
 
+class SetEventRecurrence(Command):
+
+    def __init__(self, app, text):
+        self.app = app
+        self.selected = self.app.weekview.selected
+        self.event = self.app.weekview.get_occurence_event(self.selected)
+        self.old = self.event.recurrence
+        self.new = parser.parse(text)
+        self.do()
+
+    def do(self):
+        self.event.recurrence = self.new
+
+    def undo(self):
+        self.event.recurrence = self.old
+
 class MoveEvent(MouseCommand):
 
     @classmethod
@@ -953,10 +969,13 @@ class App(object):
         self.dont_update_entry = True
         self.dirty = False
         b = self.selection_buffer
-        
+        text = b.get_text(b.get_start_iter(), b.get_end_iter())
+
         try:
-            text = b.get_text(b.get_start_iter(), b.get_end_iter())
-            self.undo.commit(SelectRecurrence(self, text))
+            if not (self.weekview.selected is None):
+                self.undo.commit(SetEventRecurrence(self, text))
+            else:
+                self.undo.commit(SelectRecurrence(self, text))
             b.remove_all_tags(b.get_start_iter(), b.get_end_iter())
         except parser.ParseError, e:
             self.selection_entry_error(e.position)
@@ -990,6 +1009,9 @@ class App(object):
             return
         if not (self.weekview.selection_recurrence is None):
             text = self.weekview.selection_recurrence.toEnglish()
+        elif not (self.weekview.selected is None):
+            text = self.weekview.get_occurence_event(
+                self.weekview.selected).recurrence.toEnglish()
         else:
             text = ""
         self.selection_buffer.set_text(text)
