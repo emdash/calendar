@@ -497,10 +497,16 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         else:
             self.select_occurrence(None)
 
+    def get_occurence_event(self, occurrence):
+        try:
+            return self.occurrences[occurrence][0]
+        except KeyError:
+            return None
+
     def select_occurrence(self, occurrence):
         self.selected = occurrence
         if occurrence:
-            self.configure_editor(self.occurrences[occurrence][0])
+            self.configure_editor(self.get_occurence_event(occurrence))
         self.changed(False)
 
     def configure_editor(self, event):
@@ -515,7 +521,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         if not self.editing:
             return
 
-        self.occurrences[self.selected][0].description = self.ti.get_text()
+        self.get_occurence_event(self.selected).description = self.ti.get_text()
         self.changed(False)
 
 class WeekViewItem(goocanvas.Group):
