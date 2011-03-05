@@ -115,8 +115,25 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
     date = gobject.property(type=float,
         default=datetime.date.today().toordinal())
     selected = gobject.property(type=gobject.TYPE_PYOBJECT)
-    selection_recurrence = gobject.property(type=gobject.TYPE_PYOBJECT)
     handle_locations = None
+
+    __gsignals__ = {
+        "selection-recurrence-changed": (gobject.SIGNAL_RUN_LAST,
+                                         gobject.TYPE_NONE,
+                                         ())
+        
+        }
+    
+    _sr = None
+
+    def _get_sr(self):
+        return self._sr
+
+    def _set_sr(self, value):
+        self._sr = value
+        self.emit("selection-recurrence-changed")
+
+    selection_recurrence = property(_get_sr, _set_sr)
 
     def __init__(self, *args, **kwargs):
         goocanvas.ItemSimple.__init__(self, *args, **kwargs)
@@ -891,7 +908,7 @@ class App(object):
         w.show_all()
         self.window = w
         self.weekview.connect("notify::selected", self.update_actions)
-        self.weekview.connect("notify::selection_recurrence", self.update_actions)
+        self.weekview.connect("selection-recurrence-changed", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
         self.selection_entry.connect("key-release-event", self.selection_entry_changed_cb)
