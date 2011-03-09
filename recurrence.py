@@ -128,6 +128,9 @@ class Node(object):
     def __eq__(self, other):
         return (type(self) == type(other)) and (self.children == other.children)
 
+    def __hash__(self):
+        return hash((type(self), self.children))
+
     def __str__(self):
         return self.__class__.__name__ + "(" + \
             ", ".join((str(c) for c in self.children)) + ')'
