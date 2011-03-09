@@ -764,6 +764,7 @@ class NewEvent(MenuCommand):
     def do(self):
         self.app.model.add_event(self.event)
         self.app.weekview.selection_recurrence = None
+        self.app.weekview.changed(False)
         return True
 
     def undo(self):
