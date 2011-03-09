@@ -220,9 +220,9 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
     def point_to_occurrence(self, x, y):
         point = (x / self.scale, y / self.scale)
-        for period, (event, area) in self.occurrences.iteritems():
+        for ordinal, (event, area, period) in self.occurrences.iteritems():
             if area.contains_point(point):
-                return event, period, area
+                return event, ordinal, area
 
         return None
 
@@ -371,7 +371,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         
         shapes.filled_box(cr, area, settings.default_event_bg_color)
 
-        if (period == self.selected) and (self.cursor_showing):
+        if self.selected and (period.ordinal == self.selected[1]) and (self.cursor_showing):
             cursor_pos = self.ti.get_cursor_pos()
         else:
             cursor_pos = -1
@@ -380,7 +380,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
                                        settings.default_event_text_color,
                                        cursor_pos)
            
-        self.occurrences[period] = (event, area)
+        self.occurrences[(event, period.ordinal)] = (event, area, period)
 
     def dates_visible(self):
         s = datetime.date.fromordinal(int(self.date))
@@ -651,8 +651,6 @@ class MoveEvent(MouseCommand):
         x, y = self.rel
         delta = self.instance.point_to_timedelta(int(x + self.offset), y, self.shift)
         self.event.recurrence = self.old + delta
-        if self.instance.selected:
-            self.instance.selected = self.selected + delta
         return True
 
     def undo(self):
@@ -669,7 +667,7 @@ class SetEventStart(MouseCommand):
         self.mdown = abs
         self.instance = instance
         self.selected = instance.selected
-        occurrence = instance.selected
+        occurrence = instance.occurrences[self.selected][2]
         self.recurrence = occurrence.creator
         self.pos = self.recurrence.start
 
@@ -678,7 +676,6 @@ class SetEventStart(MouseCommand):
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
                 self.shift).time(),
             self.recurrence.end)
-        self.instance.selected = self.selected.clone(start=self.recurrence.start)
         self.instance.changed(False)
         return True
 
@@ -696,7 +693,7 @@ class SetEventEnd(MouseCommand):
         self.mdown = abs
         self.instance = instance
         self.selected = instance.selected
-        occurrence = instance.selected
+        occurrence = instance.occurrences[self.selected][2]
         self.recurrence = occurrence.creator
         self.pos = self.recurrence.start
 
@@ -705,7 +702,6 @@ class SetEventEnd(MouseCommand):
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
                 self.shift).time(),
             self.recurrence.start)
-        self.instance.selected = self.selected.clone(end=self.recurrence.end)
         self.instance.changed(False)
         return True
 
