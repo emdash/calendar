@@ -942,7 +942,7 @@ class App(object):
         self.weekview.connect("selection-recurrence-changed", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
-        self.selection_entry.connect("key-release-event", self.selection_entry_changed_cb)
+        self.selection_entry.connect("key-press-event", self.selection_entry_key_press_cb)
 
     def pack_toolbar_widget(self, toolbar, widget):
         toolitem = gtk.ToolItem()
@@ -952,20 +952,15 @@ class App(object):
         toolitem.show()
         toolbar.add(toolitem)
 
-    idle_timeout = 1000
-    last_keypress = 0
-    dirty = False
     dont_update_entry = False
 
-    def selection_entry_changed_cb(self, entry, event):
-        self.last_keypress = time.time()
-        self.dirty = True
-        self._parse_text()
+    def selection_entry_key_press_cb(self, entry, event):
+        if event.keyval == gtk.keysyms.Return:
+            self._parse_text()
+            return True
+        return False
 
     def _parse_text(self):
-        if not self.dirty:
-            return
-
         self.dont_update_entry = True
         self.dirty = False
         b = self.selection_buffer
