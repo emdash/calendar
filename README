@@ -1,0 +1,114 @@
+ This program needs a name. Help me find a name for it!
+
+INSTALLING
+
+ You can't.
+
+DEPENDENCIES
+
+ python 2.x series (not python 3k)
+ pygtk
+ pycairo
+ pygoocanvas
+ ply (python parser-generator)
+ 
+USAGE
+
+ You must select an area before you can create an event. This requires
+ *draging* over an empty part of the canvas, or typing in a recurrence
+ in the text box and pressing the Enter/Return key.
+
+ You can select multiple days at once.
+
+ When you move a recurring event, the whole recurrence pattern is
+ shifted. For now, you must explictly add an exception by editing the
+ recurrence. Similarly, when you change the start or end time of an
+ event, the start/end time for other occurrences may be affected.
+ 
+RECURRENCES
+
+ Recurring events are expressed using a subset of english, with the
+ addition of optional parenthesis for clarity. The language can be
+ used to express both one-off and repeating events. The syntax is
+ intended to be natural, but there will be occasions when the parser
+ has trouble. If a syntax error occurs, the offending text will be
+ underlined. If the expression doesn't do what you intended, try
+ adding parentheses around subexpressions.
+
+ For an event to show up in the calendar, it must be given both a date
+ pattern *and* a time pattern. All-day events are currently not
+ rendered.
+
+ Recurrence expressions are not case sensitive.
+
+ What follows are some examples of usage.
+
+      DATES
+
+ Dates can be given in m/d/y format, by weekday, by an ordinal number
+ (24th), or a month/ordinal combination. Day and month names can be
+ either written out, or 3-letter abbreviations (with no period).
+
+ 10/25/2011	      	      	  october 25th, 2011
+ 10/25/2011, 10/26/2011
+
+ 
+ this wednesday	      		  the first wednesday after today's date
+ next wed
+ wed
+ wed, thu, fri
+ today
+ tomorrow
+
+ october 25th october		  25th of this year (or next year, if the date is
+ oct 25th     	      	          october 26th or later)
+
+     PATTERNS OF REPETITION
+
+ every 2 days			  repeats every other day starting today
+ every 2 days starting tomorrow
+ every 2 days 
+ every wednesday
+ every wed, thu and fri
+ every 2nd wednesday		  the 2nd wednesday of each month
+ every dec 25th			  christmas day
+
+      TIMES
+
+ Times can be in either 12-hour am/pm notation or in 24-hour time. If
+ no am/pm is provided, you must give the time in xx:xx format, and 24
+ hour time is assumed.
+
+ every 2 days from 4:30pm to 5pm
+ every wednesday at 4pm for 2 hours 30 minutes
+ every wednesday at 13:35 until 19:20
+
+      COMBINING PATTERNS
+
+ Parentheses may be required to disambiguate.
+
+ every 2nd wednesday and every 4th tuesday
+ 25th of each month and 26th of each month
+ (every monday from 4pm until 5pm) and (every tuesday from 2pm until 3pm)
+
+      EXCEPTIONS
+
+ Any pattern can be used to provide an exception, though parenthesis
+ may be required to disambiguate. For the purpose of specifying
+ exceptions, start and stop times are ignored. Thus: "every 2 days
+ except wed" has the same effect as "every 2 days except (wed from 4pm
+ to 5pm)". What you probably intend is "(every 2 days except wed) from
+ 4pm to 5pm".
+
+ every wednesday except 3/9/2011
+ every wednesday except next wed
+ every 2 days except every last wed
+ every mon, wed, friday from september until october
+
+HACKING
+
+ see HACKING, in this directory
+
+AUTHORS
+
+ Brandon Lewis <brandon_lewis@alum.berkeley.edu>
