@@ -1,0 +1,216 @@
+Quickstart Guide: I want to....
+ 
+ * Fix a bug in the parser: look in parser.py. Do add a new regression
+   test for your fix at the end of parser.py
+ 
+ * Add a new feature to the grammar: If what you're doing can be done
+   with existing recurrence objects, you may only need to add a new
+   production to the grammar. If what you're doing represents a new
+   type of recurrence pattern, you will also need to add a new subclass
+   in recurrence.py.
+
+ * Change the behavior of the toolbar commands: these are implemented
+   by subclasses of MenuCommand. Find the appropriate one in cal.py
+ 
+ * Add a new button to the toolbars: You need to two things;
+   1. Create a subclass of MenuCommand in cal.py
+   2. Add it an entry in the UI string in cal.py
+
+ * Change the interactive behavior of the calendar: There are 6 commands
+   - SelectPoint     - when the user clicks on the calendar view
+   - SelectArea      - when the user clicks and drags on empty areas of the calendar
+   - MoveEvent       - when the user clicks and drags on an event
+   - SetEventStart   - when the user clicks and drags on the top selection handle
+   - SetEventEnd     - when the user clicks and drags on the bottom selection handle
+   - DragCalendar    - when the user clicks and drags on the day header
+
+ * Add a new mouse-driven behavior:
+   1. Define a new MouseCommand object
+   2. Register it with the appropriate CommandDispatcher object (there are two:
+      one posts to the undo/redo stack, the other posts to the navigational
+      history stack.)
+
+ * Change the appearance of the calendar:
+   - Default Colors and font descriptions are stored in settings.py
+   - Low-level shape and text commands are defined in shapes.py
+   - Higher-level shapes are implemented as methods in the WeekView class. Start at
+     do_simple_paint and work your way down.
+
+ * Add support for another file format or data source: You'll want to
+   modify or subclass schedule at least. Possibly 'event' and
+   recurrence as well. Right now the code assumes there is only one
+   schedule for a given view. Adding support for multiple schedules
+   might be also good idea.
+
+ * I want to implement support for alarms: You're largely on your own
+   here, I could use a lot of help with that.
+ 
+Schedule Module
+  
+ The schedule module implements the Schedule and Event objects. This is
+ pretty self-explanatory. A schedule is a container for events, and an
+ event is a description associated with a pattern of recurrence. A
+ homebrew notification system enables notifying the UI when an event
+ object changes, promtpting any registered views to redraw themselves.
+ 
+        * Right now this mechanism is a simple callback, which can only
+          support a single listener per instance. This needs to be
+          remedied
+
+Recurring Event Implementation
+
+ First some concepts:
+ 
+ - A schedule is a container of a finite number of events
+ 
+ - An event is a description (possibly other attributes in the future)
+   with a *possibly infinite* set of "Occurrences". These are not
+   stored in the event directly, but provided by a Recurrence object
+   (implemented in recurrence.py).
+
+ - An occurrence is like a datetime.datetime, but with duration. So an
+   Occurrence has a start *and* and end time. A number of features of
+   the Occurrence object are designed for easy comparison with
+   datetime.datetime objects. For the purpose of comparing with a
+   single datetime, the start time of the Occurrence is used.
+
+ - A Recurrence object implements a method, timedOccurrences, which
+   returns an iterator representing all the occurrences between a
+   given start and stop date. From the perspective of the client code,
+   it doesn't matter whether these events are finite or infinite. We
+   can only see a few of them at a time.
+
+ - Some Recurrences are 'sources' or 'generators' of Occurrences (for
+   example, Daily or Weekly), while others are 'filters' or
+   'combinators' of occurrences (for example, Until or Except).
+
+ - You can add a datetime.timedelta to an Occurrence, and the result
+   is a new Occurrence with the start and end time shifted by the
+   timedelta amount.
+
+ - You can add a datetime.timedelta to Recurrence A, and the result is
+   Recurrence B, where for every Occurrence in A there's a
+   corresponding Occurrence in B shifted by the timedelta amount. For
+   example, if I have a Weekly recurrence that recurrs on Mondays and
+   Wednesdays, and I add 1 day to it, i get a new recurrence which
+   recurrs on Tuesdays and Thursdays. Got it?
+
+ By now it should be clear that you can combine recurrences together
+ in arbitrary ways. The job of the parser is to turn 'english' phrases
+ into a data structure that will produce the appropriate sequence of
+ dates.
+
+ When you drag an event in the calendar, what you are actually doing
+ is creating a new recurrence. You are adding a timedelta to the
+ original recurrence, a value which corresponds to the distance the
+ pointer has traveled since the mouse button was depressed.
+
+ When you change the duration of an event in the calendar, you are
+ also changing the recurrence in a slightly more round-about
+ fashion. There is something called a "Period" recurrence, which
+ adjusts the start and end time of its child Recurrence. When you set
+ the event start or end, you are actually setting the start/end times
+ of the Period Recurrence associated with the selected Occurrence. Got
+ it?
+
+ Because of all this freewheeling shifting and composition of
+ recurrences, it gets a bit hard to keep track of which occurrence
+ you've actually got selected. To keep track of this, I've introduced
+ the concept of an 'ordinal'. An ordinal is like the 'index' of an
+ occurrence from a given Recurrence. It's a way of determining whether
+ two Occurrences with different start/end times from different
+ Recurrences represent the same 'position' or 'index' in their
+ corresponding recurrences. This why the selection handles don't
+ dissappear or jump around as you stretch and move events in the
+ calendar.
+
+ One final note about recurrences: in a few cases, shifting an
+ occurrence by a timedelta can't return an instance of the same
+ type. Case in point is the Montly recurrence. If you want to add -1
+ day to a recurrence that recurrs on the 25th of each month, that's
+ fine. But what happens if you want to add -1 day to 1st of each
+ month? Now you have trouble. Some months end on 30th, others the
+ 31st, and February might have either 28 or 29 days depending on what
+ year it is. So the day of the resulting occurrence depends on which
+ dates you're looking at, and you can't know that in advance.
+
+ To take care of this, the "Offset" recurrence was created. What this
+ does is add a timedelta offset to every recurrence created by its
+ child. Adding a timedelta to a Monthly or NthWeekday recurrence
+ returns an Offset() recurrence. As an optimization, wrapping an
+ Offset() recurrence around an Offset recurrence collapses the two
+ offsets into a single offset. A further optimization could be done
+ wherein if the final offset is 0, the result should be the original
+ occurrence. The Offset() recurrence is also behind the "after" and
+ "before" operators in the parser.
+	  
+MVC and Command Patterns in the Calendaring Application
+
+ The calendar application employs the Command Pattern and the MVC
+ Pattern together. This is probably a different strategy from those
+ employed in other applications. The main goal of this system is to
+ minimize the number of code paths taken for a given user action,
+ whether that action is being performed for the first time, being
+ undone, or being redone. It also helps break the UI down into small
+ testable units.
+ 
+ Any user-visible action should be implemented as a subclass of
+ Command. A few subclasses have been created to handle the common
+ cases, which include:
+ 
+        * MenuCommand: subclassing this will allow you to add an item
+          to a menu or toolbar simply by referring to its class name in
+          the UI String (see cal.py)
+ 
+        * MouseCommand: subclassing this allows the resulting class to
+          be registered with a "command dispatcher" observer, which
+          will respond to mouse events on a UI element and invoke the
+          appropriate command object from its list. The important thing
+          to note is that the command will be invoked multiple times --
+          for each motion-notify-event that the dispatcher receives
+          while the mouse is held down -- before it is posted to the
+          undo stack.
+ 
+ To ease the burden of writing classes which listen for emission of a
+ group of signal emissions. There exits a class called Behavior
+ (perhaps Observer would be a better name). A Behavior subclass has a
+ list of signals and an instance. When an observer observes an
+ instance, it connects to each of the signals in its list. If the
+ observer already was listening to an instance, it disconnects from
+ each of the signals it was listening to on the previous instance. A
+ behavior will connect a signal named "foo" to a method named "on_foo".
+ 
+ GTK and Goocanvas don't really follow the MVC pattern: widgets and
+ canvas items are both views and controllers, simultaneously. This
+ causes problems when you have a pattern of behavior that you want to
+ re-use across several widgets. To remedy this, we have separated out
+ the signal connection and event-handling logic for common behavior
+ patterns into separate classes. This simulates SmallTalk-style
+ MVC. Currently the following behaviors are implemented. Multiple
+ behaviors can be applied to a single instance.
+ 
+ 	  * TextInput: responds to key press/release events on an
+             object, calling appropriate methods. Maintains a
+             representation of the state of the keyboard.
+ 	    
+ 	  * MouseInteraction: responds to button-press, release, and
+             motion-notify events on an object. These are abstracted
+             into high-level events such as click, drag, move, and
+             flick. Button state and mouse coordinates are available as
+             instance attributes. They're there, if you want them, but
+             not if you don't.
+ 
+ 	  * CommandDispatcher: for the special case that the only
+             interactive mouse behavior you provide will be implemented
+             by a set of MouseCommand objects. This is probably the
+             case if you want behavior to be undoable.
+ 
+Main Entry Point
+      
+ The main applicatoin layout is in the executable file cal.py. Here you
+ will find the WeekView class, as well as all the Commands implemented by
+ the application. At the head of this file is the TODO list, which is all
+ this project has for a bug tracker.
+ 
+      * In the future, WeekView and all its associated MouseCommand
+        subclasses will be split into a separate module.
