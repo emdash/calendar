@@ -51,7 +51,6 @@ import time
 #TODO: do something sane when events overlap
 #TODO: specify working day (hide unused hours)
 #TODO: tomboy integration
-#TODO: parser: ignore words like 'the'
 #TODO: implement month view
 #TODO: remove the selection marquee, replace with a 'temporary event'
 #      clicking creates an event with a default duration
