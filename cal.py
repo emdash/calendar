@@ -53,10 +53,10 @@ import time
 #TODO: tomboy integration
 #TODO: parser: ignore words like 'the'
 #TODO: implement month view
-#TODO: allow changing event recurrence textually
 #TODO: remove the selection marquee, replace with a 'temporary event'
 #      clicking creates an event with a default duration
 #      clicking and dragging creates an event over the specified area (min 15 min)
+#TODO: exceptions to recurrences
 
 def quantize(x, modulus):
     return (x // modulus) * modulus
