@@ -103,9 +103,14 @@ class Schedule(object):
     def load(self, path):
         try:
             data = open(path, "r").readlines()
-            for line in data:
+            for lineno, line in enumerate(data):
                 recurrence, description = line.split("|")
-                self.add_event(Event(parser.parse(recurrence), description.strip()))
+                try:
+                    self.add_event(Event(parser.parse(recurrence), description.strip()))
+                except parser.ParseError, e:
+                    print "Error parsing file '%s' on line %d:" % (path, lineno)
+                    print line.strip()
+                    print (' ' * (e.position - 1)) + '^'
         except IOError:
             pass
 
