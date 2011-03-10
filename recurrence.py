@@ -386,7 +386,7 @@ class And(Node):
         self.b = b
 
     def __add__(self, delta):
-        return Except(self.a + delta, self.b + delta)
+        return And(self.a + delta, self.b + delta)
 
     def toEnglish(self):
         return "(%s) and (%s)" % (self.a.toEnglish(), self.b.toEnglish())
@@ -637,6 +637,16 @@ if __name__ == '__main__':
             Period(DateSet(datetime.date(2011, 3, 3)),
                    datetime.time(16, 45),
                    datetime.time(17, 45)))
+
+    assert (And(DateSet(datetime.date(2011, 3, 2)),
+                DateSet(datetime.date(2011, 3, 5))) + delta ==
+            And(DateSet(datetime.date(2011, 3, 3)),
+                DateSet(datetime.date(2011, 3, 6))))
+
+    assert (Except(Daily(datetime.date(2011, 3, 2), 2),
+                   DateSet(datetime.date(2011, 3, 4))) + delta ==
+            Except(Daily(datetime.date(2011, 3, 3), 2),
+                   DateSet(datetime.date(2011, 3, 5))))
 
     assert (Offset(Monthly(None, 24), datetime.timedelta(days=1)).toEnglish() ==
             "1 days after (24 of each month)")
