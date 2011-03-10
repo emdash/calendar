@@ -371,7 +371,10 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         
         shapes.filled_box(cr, area, settings.default_event_bg_color)
 
-        if self.selected and (period.ordinal == self.selected[1]) and (self.cursor_showing):
+        if (self.selected and
+            (event == self.selected[0]) and
+            (period.ordinal == self.selected[1]) and
+            (self.cursor_showing)):
             cursor_pos = self.ti.get_cursor_pos()
         else:
             cursor_pos = -1
