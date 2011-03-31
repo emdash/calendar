@@ -237,7 +237,7 @@ class Weekly(Node):
         return Weekly(*((c + delta.days) % 7 for c in self.days))
 
     def toEnglish(self):
-        return ", ".join((daynames[d] for d in self.days))
+        return "every " + ", ".join((daynames[d] for d in self.days))
 
     def ordinal(self, date):
         days = [1 if (d in self.days) else 0 for d in range(7)]
@@ -668,6 +668,8 @@ if __name__ == '__main__':
                    DateSet(datetime.date(2011, 3, 4))) + delta ==
             Except(Daily(datetime.date(2011, 3, 3), 2),
                    DateSet(datetime.date(2011, 3, 5))))
+
+    assert (Weekly(1).toEnglish() == "every tuesday")
 
     assert (Offset(Monthly(None, 24), datetime.timedelta(days=1)).toEnglish() ==
             "1 days after (24 of each month)")
