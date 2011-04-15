@@ -96,7 +96,7 @@ def scaled_property(name):
         scaled_setter(name),
         type=float)
 
-class WeekView(goocanvas.ItemSimple, goocanvas.Item):
+class WeekView(gtk.DrawingArea):
 
     __gtype_name__ = "WeekView"
     
@@ -140,8 +140,8 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
     selection_recurrence = property(_get_sr, _set_sr)
 
-    def __init__(self, *args, **kwargs):
-        goocanvas.ItemSimple.__init__(self, *args, **kwargs)
+    def __init__(self, undo, history, *args, **kwargs):
+        gtk.DrawingArea.__init__(self, *args, **kwargs)
         self.editing = False
                 
         self.model = Schedule("schedule.csv")
@@ -155,16 +155,31 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
         self.selection_recurrence = None
+        self.connect("expose-event", self.do_expose)
+
+        self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
+        self.scrolling.observe(self)
+        self.dispatcher = MouseCommandDispatcher(
+            undo,
+            drag_commands = (SetEventStart,
+                              SetEventEnd,
+                              MoveEvent,
+                              SelectArea),
+            click_commands = (SelectPoint,))
+        self.dispatcher.observe(self)
+        self.set_size_request(600, 400)
+        self.set_events(gtk.gdk.ALL_EVENTS_MASK)
+        self.props.can_focus = True
 
     def _blink_cursor(self):
         if not self.editing:
             return True
         self.cursor_showing = not self.cursor_showing
-        self.changed(False)
+        self.queue_draw()
         return True
 
     def model_changed(self):
-        self.changed(False)
+        self.queue_draw()
 
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
@@ -231,22 +246,10 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
 
     def do_notify(self, something, something_else):
         #self.day_width = self.width / 8
-        self.changed(True)
-
-    def do_simple_is_item_at(self, x, y, cr, pointer_event):
-        if not (self.x <= x <= (self.x + self.width)):
-            return False
-        elif not (self.y <= y <= (self.y + self.height)):
-            return False
-        return True
+        self.queue_draw()
 
     def get_week_pixel_offset(self):
         return self.day_width - (self.date * self.day_width % self.day_width)
-
-    def do_simple_update(self, cr):
-        cr.identity_matrix()
-        self.bounds = goocanvas.Bounds(self.x, self.y,
-            self.x + self.width, self.y + self.height)
         
     def selection_handles(self, cr):
         area = self.occurrences[self.selected][1]
@@ -393,7 +396,6 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.occurrences = {}
         for evt, period in self.model.timedOccurrences(*self.dates_visible()):
             if period.all_day:
-                print evt.recurrence.toEnglish()
                 continue
             self.draw_event(cr, evt, period)
         cr.restore()
@@ -447,7 +449,8 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         cr.line_to(self.day_width, self.height)
         cr.stroke()
 
-    def do_simple_paint(self, cr, bounds):
+    def do_expose(self, widget, event):
+        cr = widget.window.cairo_create()
         cr.identity_matrix()
         cr.scale(self.scale, self.scale)
 
@@ -509,11 +512,11 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
         self.selected = occurrence
         if occurrence:
             self.configure_editor(self.get_occurence_event(occurrence))
-        self.changed(False)
+        self.queue_draw()
 
     def configure_editor(self, event):
         if event:
-            self.get_canvas().grab_focus(self)
+            self.grab_focus()
             self.ti.set_text(event.description)
             self.editing = True
         else:
@@ -524,25 +527,7 @@ class WeekView(goocanvas.ItemSimple, goocanvas.Item):
             return
 
         self.get_occurence_event(self.selected).description = self.ti.get_text()
-        self.changed(False)
-
-class WeekViewItem(goocanvas.Group):
-
-    __gtype_name__ = "WeekViewItem"
-
-    def __init__(self, undo, history, *args, **kwargs):
-        goocanvas.Group.__init__(self, *args, **kwargs)
-        self.weekview = WeekView(parent=self)
-        self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
-        self.scrolling.observe(self.weekview)
-        self.dispatcher = MouseCommandDispatcher(
-            undo,
-            drag_commands = (SetEventStart,
-                              SetEventEnd,
-                              MoveEvent,
-                              SelectArea),
-            click_commands = (SelectPoint,))
-        self.dispatcher.observe(self.weekview)
+        self.queue_draw()
 
 class SelectPoint(Command):
 
@@ -678,7 +663,7 @@ class SetEventStart(MouseCommand):
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
                 self.shift).time(),
             self.recurrence.end)
-        self.instance.changed(False)
+        self.instance.queue_draw()
         return True
 
     def undo(self):
@@ -704,7 +689,7 @@ class SetEventEnd(MouseCommand):
             self.instance.point_to_datetime(self.mdown[0], self.abs[1],
                 self.shift).time(),
             self.recurrence.start)
-        self.instance.changed(False)
+        self.instance.queue_draw()
         return True
 
     def undo(self):
@@ -762,7 +747,7 @@ class NewEvent(MenuCommand):
     def do(self):
         self.app.model.add_event(self.event)
         self.app.weekview.selection_recurrence = None
-        self.app.weekview.changed(False)
+        self.app.weekview.queue_draw()
         return True
 
     def undo(self):
@@ -893,15 +878,10 @@ class App(object):
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
         hbox = gtk.HBox()
-        canvas = goocanvas.Canvas()
-        self.calendar_item = WeekViewItem(self.undo, self.history)
-        self.weekview = self.calendar_item.weekview
+        self.weekview = WeekView(self.undo, self.history)
         self.model = self.weekview.model
-        canvas.get_root_item().add_child(self.calendar_item)
-        canvas.set_size_request(settings.width, settings.height)
-        canvas.show()
-        canvas.connect("size-allocate", self.size_allocate_cb)
-        hbox.pack_start(canvas)
+        self.weekview.connect("size-allocate", self.size_allocate_cb)
+        hbox.pack_start(self.weekview)
         self.scrollbar = gtk.VScrollbar()
         hbox.pack_start(self.scrollbar, False, False)
 
@@ -991,11 +971,10 @@ class App(object):
         self.scrollbar.set_range(0, self.weekview.hour_height * 25 -
             self.weekview.height)
 
-    def size_allocate_cb(self, canvas, allocation):
+    def size_allocate_cb(self, widget, allocation):
+        # FIXME: this should be moved into the widget itself
         self.weekview.width = allocation.width
         self.weekview.height = allocation.height
-        canvas.props.x2 = allocation.width
-        canvas.props.y2 = allocation.height
 
     def update_actions(self, *unused):
         MenuCommand.update_actions(self)
