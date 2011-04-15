@@ -94,21 +94,49 @@ def scaled_property(name):
         scaled_setter(name),
         type=float)
 
-class WeekView(gtk.DrawingArea):
+class CustomWidget(gtk.DrawingArea):
+
+    __gtype_name__ = "CustomWidget"
+
+    scale = gobject.property(type=float, default=1.0)
+    
+    _width = settings.width
+    _height = settings.height
+
+    width = scaled_property("width")
+
+    def __init__(self, *args, **kwargs):
+        gtk.DrawingArea.__init__(self, *args, **kwargs)
+        self.connect("size-allocate", self.size_allocate_cb)
+        self.connect("expose-event", self.do_expose)
+        self.connect("notify", self.do_notify)
+        self.set_size_request(600, 400)
+        self.set_events(gtk.gdk.ALL_EVENTS_MASK)
+        self.props.can_focus = True
+        
+    def size_allocate_cb(self, widget, allocation):
+        self.width = allocation.width
+        self.height = allocation.height
+        
+    def do_notify(self, something, something_else):
+        self.queue_draw()
+
+    def do_expose(self, widget, event):
+        self.paint(widget.window.cairo_create())
+
+    def paint(self, cr):
+        raise NotImplemented
+
+class WeekView(CustomWidget):
 
     __gtype_name__ = "WeekView"
-    
-    scale = gobject.property(type=float, default=1.0)
 
     x = gobject.property(type=int, default=0)
     y = gobject.property(type=int, default=0)
-
-    _width = settings.width
-    _height = settings.height
+    
     _day_width = settings.day_width
     _y_scroll_offset = 0
     
-    width = scaled_property("width")
     height = scaled_property("height")
     y_scroll_offset = scaled_property("y_scroll_offset")
     
@@ -139,12 +167,11 @@ class WeekView(gtk.DrawingArea):
     selection_recurrence = property(_get_sr, _set_sr)
 
     def __init__(self, undo, history, *args, **kwargs):
-        gtk.DrawingArea.__init__(self, *args, **kwargs)
+        CustomWidget.__init__(self, *args, **kwargs)
         self.editing = False
                 
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
-        self.connect("notify", self.do_notify)
         self.occurrences = {}
         self.selected = None
         self.font_desc = pango.FontDescription("Sans 8")
@@ -153,7 +180,6 @@ class WeekView(gtk.DrawingArea):
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
         self.selection_recurrence = None
-        self.connect("expose-event", self.do_expose)
 
         self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
         self.scrolling.observe(self)
@@ -165,9 +191,6 @@ class WeekView(gtk.DrawingArea):
                               SelectArea),
             click_commands = (SelectPoint,))
         self.dispatcher.observe(self)
-        self.set_size_request(600, 400)
-        self.set_events(gtk.gdk.ALL_EVENTS_MASK)
-        self.props.can_focus = True
 
     def _blink_cursor(self):
         if not self.editing:
@@ -241,10 +264,6 @@ class WeekView(gtk.DrawingArea):
     def point_to_event(self, x, y):
         ret = self.point_to_occurrence(x, y)
         return ret[0] if ret else None
-
-    def do_notify(self, something, something_else):
-        #self.day_width = self.width / 8
-        self.queue_draw()
 
     def get_week_pixel_offset(self):
         return self.day_width - (self.date * self.day_width % self.day_width)
@@ -447,8 +466,7 @@ class WeekView(gtk.DrawingArea):
         cr.line_to(self.day_width, self.height)
         cr.stroke()
 
-    def do_expose(self, widget, event):
-        cr = widget.window.cairo_create()
+    def paint(self, cr):
         cr.identity_matrix()
         cr.scale(self.scale, self.scale)
 
@@ -878,7 +896,6 @@ class App(object):
         hbox = gtk.HBox()
         self.weekview = WeekView(self.undo, self.history)
         self.model = self.weekview.model
-        self.weekview.connect("size-allocate", self.size_allocate_cb)
         hbox.pack_start(self.weekview)
         self.scrollbar = gtk.VScrollbar()
         hbox.pack_start(self.scrollbar, False, False)
@@ -968,11 +985,6 @@ class App(object):
     def update_scroll_adjustment(self, *unused):
         self.scrollbar.set_range(0, self.weekview.hour_height * 25 -
             self.weekview.height)
-
-    def size_allocate_cb(self, widget, allocation):
-        # FIXME: this should be moved into the widget itself
-        self.weekview.width = allocation.width
-        self.weekview.height = allocation.height
 
     def update_actions(self, *unused):
         MenuCommand.update_actions(self)
