@@ -58,10 +58,10 @@ class TextInput(Behavior):
         self.connect("focus-in-event")
         self.connect("focus-out-event")
 
-    def on_focus_in_event(self, item, target, event):
+    def on_focus_in_event(self, item, event):
         pass
 
-    def on_focus_out_event(self, item, target, event):
+    def on_focus_out_event(self, item, event):
         pass
 
     def cursor_iter(self):
@@ -103,7 +103,7 @@ class TextInput(Behavior):
         gtk.keysyms.Right: right,
     }
 
-    def on_key_press_event(self, item, target, event):
+    def on_key_press_event(self, item, event):
         self.instance.cursor_showing = True
 
         if event.keyval in self.keyfuncs:
@@ -112,7 +112,7 @@ class TextInput(Behavior):
             return
         self.buffer.insert_at_cursor(event.string)
 
-    def on_key_release_event(self, item, target, event):
+    def on_key_release_event(self, item, event):
         pass
 
     def get_text(self):
@@ -139,7 +139,6 @@ class MouseInteraction(Behavior):
 
     _button_down = False
     _dragging = False
-    _canvas = None
 
     mdown = (0, 0)
     abs = (0, 0)
@@ -147,9 +146,7 @@ class MouseInteraction(Behavior):
     delta = (0, 0)
     event = None
 
-    def _common(self, item, target, event):
-        if not self._canvas:
-            self._canvas = item.get_canvas()
+    def _common(self, item, event):
         self.event = event
 
     def point_in_area(self, point):
@@ -165,19 +162,19 @@ class MouseInteraction(Behavior):
     def flick_threshold(self):
         return True
 
-    def on_button_press_event(self, item, target, event):
+    def on_button_press_event(self, item, event):
         if self.area:
             if not self.point_in_area(self.abs):
                 return False
 
-        self._common(item, target, event)
+        self._common(item, event)
         self.mdown = (event.x, event.y)
         self._button_down = True
         self.button_press()
         return True
 
-    def on_button_release_event(self, item, target, event):
-        self._common(item, target, event)
+    def on_button_release_event(self, item, event):
+        self._common(item, event)
         ret = False
         if self._dragging:
             self.drag_end()
@@ -192,11 +189,11 @@ class MouseInteraction(Behavior):
         self.button_release()
         return ret
 
-    def on_motion_notify_event(self, item, target, event):
+    def on_motion_notify_event(self, item, event):
         ret = False
-        self._common(item, target, event)
+        self._common(item, event)
         self.last = self.abs
-        self.abs = self._canvas.convert_from_pixels(event.x, event.y)
+        self.abs = (event.x, event.y)
         self.rel = (self.abs[0] - self.mdown[0], self.abs[1] - self.mdown[1])
         self.delta = (self.abs[0] - self.last[0], self.abs[1] -
             self.last[1])
