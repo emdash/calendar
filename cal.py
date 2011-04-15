@@ -45,7 +45,6 @@ import time
 #TODO: sync with evolution ??
 #TODO: go to next {week, month}
 #TODO: make calendar view "roll" so that sunday is always on the left
-#TODO: change cursors
 #TODO: do something sane when events overlap
 #TODO: specify working day (hide unused hours)
 #TODO: tomboy integration
@@ -684,6 +683,8 @@ class SetEventRecurrence(Command):
 
 class MoveEvent(MouseCommand):
 
+    cursor = gtk.gdk.Cursor(gtk.gdk.HAND2)
+
     @classmethod
     def create_for_point(cls, instance, abs):
         event = instance.point_to_event(*abs)
@@ -714,6 +715,8 @@ class MoveEvent(MouseCommand):
 
 class SetEventStart(MouseCommand):
 
+    cursor = gtk.gdk.Cursor(gtk.gdk.TOP_SIDE)
+
     @classmethod
     def can_do(cls, instance, abs):
         return instance.point_in_handle(*abs) == 1
@@ -740,6 +743,8 @@ class SetEventStart(MouseCommand):
 
 class SetEventEnd(MouseCommand):
 
+    cursor = gtk.gdk.Cursor(gtk.gdk.BOTTOM_SIDE)
+
     @classmethod
     def can_do(cls, instance, abs):
         return instance.point_in_handle(*abs) == 2
@@ -750,7 +755,7 @@ class SetEventEnd(MouseCommand):
         self.selected = instance.selected
         occurrence = instance.occurrences[self.selected][2]
         self.recurrence = occurrence.creator
-        self.pos = self.recurrence.start
+        self.pos = self.recurrence.end
 
     def do(self):
         self.recurrence.end = max(
@@ -761,9 +766,11 @@ class SetEventEnd(MouseCommand):
         return True
 
     def undo(self):
-        self.event.end = self.pos
+        self.recurrence.end = self.pos
 
 class DragCalendar(MouseCommand):
+
+    cursor = gtk.gdk.Cursor(gtk.gdk.HAND1)
 
     @classmethod
     def can_do(cls, instance, abs):
