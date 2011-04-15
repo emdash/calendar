@@ -26,6 +26,7 @@ import traceback
 import sys
 import datetime
 import os
+import recurrence
 
 class TestApp(cal.App):
 
@@ -88,29 +89,25 @@ def basic_test(app):
 
 def test_select_area(app):
     yield Sleep(100)
-    cmd = cal.SelectArea(app.schedule, [100, 100])
-    cmd.update((100, 100 + app.schedule.hour_height),
-               (0, app.schedule.hour_height),
+    cmd = cal.SelectArea(app.weekview, [100, 100])
+    cmd.update((100, 100 + app.weekview.hour_height),
+               (0, app.weekview.hour_height),
                True)
     
     yield Sleep()
     
-    start = app.schedule.selected_start
-    end = app.schedule.selected_end
-    assert app.schedule.selected_end - app.schedule.selected_start == \
-        datetime.timedelta(hours=1)
+    assert type(app.info.selection_recurrence) == recurrence.Period
+    r = app.info.selection_recurrence
 
     yield Sleep()
     
     cmd.undo()
-    assert app.schedule.selected_start == None
-    assert app.schedule.selected_end == None
+    assert app.info.selection_recurrence == None
 
     yield Sleep()
     
     cmd.do()
-    assert app.schedule.selected_end == end
-    assert app.schedule.selected_start == start
+    assert app.weekview.selection_recurrence == r
 
     yield Sleep()
 
@@ -119,47 +116,40 @@ def test_new_event(app):
     s = datetime.datetime.today()
     e = s + datetime.timedelta(hours=1)
 
-    app.schedule.selected_start = s
-    app.schedule.selected_end = e
+    app.info.selection_recurrence = r = recurrence.Period(
+        recurrence.Weekly(0), datetime.time(12, 00), datetime.time(13, 00))
     
     cmd = cal.NewEvent(app)
     cmd.do()
-    assert app.schedule.selected_start == None
-    assert app.schedule.selected_end == None
-    assert app.schedule.selected.start == s
-    assert app.schedule.selected.end == e
+    assert app.info.selection_recurrence == None
 
     cmd.undo()
-    assert app.schedule.selected_start == s
-    assert app.schedule.selected_end == e
-    assert app.schedule.selected == None
+    assert app.weekview.selection_recurrence == r
 
     cmd.do()
-    assert app.schedule.selected_start == None
-    assert app.schedule.selected_end == None
-    assert app.schedule.selected.start == s
-    assert app.schedule.selected.end == e
+    assert app.weekview.selection_recurrence == None
 
 def test_select_and_delete_event(app):
-    cmd = cal.SelectArea(app.schedule, (100, 100))
-    cmd.update((100, 100 + app.schedule.hour_height),
-               (0, app.schedule.hour_height))
+    cmd = cal.SelectArea(app.weekview, (100, 100))
+    cmd.update((100, 100 + app.weekview.hour_height),
+               (0, app.weekview.hour_height))
 
-    s = app.schedule.selected_start
-    e = app.schedule.selected_end
-    
+    r = app.info.selection_recurrence
+
     cmd = cal.NewEvent(app)
     cmd.do()
     yield Sleep()
+    event = cmd.event
 
-    assert app.schedule.selected != None
-    event = app.schedule.selected
+    cmd = cal.SelectPoint(app.weekview, 110, 110)
+    cmd.do()
+    yield Sleep()
+    assert app.info.selected == (event, 0)
 
     cmd = cal.DelEvent(app)
     cmd.do()
-    assert app.schedule.selected == None
+    assert app.weekview.selected == None
     cmd.undo()
-    assert app.schedule.selected == event
 
 for test in [basic_test,
              test_select_area,
