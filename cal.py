@@ -65,7 +65,7 @@ class KineticScrollAnimation(Animation):
         self.start()
 
     def step(self):
-        self.instance.date -= self._velocity
+        self.instance.info.date -= self._velocity
         self._velocity *= 0.99
         if 0 < abs(self._velocity) < 0.01:
             self._velocity = 0
@@ -127,6 +127,58 @@ class CustomWidget(gtk.DrawingArea):
     def paint(self, cr):
         raise NotImplemented
 
+class CalendarInfo(gobject.GObject):
+
+    __gtype_name__ = "CalendarInfo"
+    
+    _date = float(datetime.date.today().toordinal())
+
+    def _get_date(self):
+        return self._date
+
+    def _set_date(self, value):
+        self._date = value
+        self.emit("date-changed")
+
+    date = gobject.property(_get_date, _set_date)
+        
+    _sr = None
+
+    def _get_sr(self):
+        return self._sr
+
+    def _set_sr(self, value):
+        self._sr = value
+        self.emit("selection-recurrence-changed")
+        
+    selection_recurrence = property(_get_sr, _set_sr)
+
+    _selected = None
+
+    def _get_selected(self):
+        return self._selected
+
+    def _set_selected(self, value):
+        self._selected = value
+        self.emit("selected-changed")
+
+    selected = gobject.property(_get_selected, _set_selected)
+
+    __gsignals__ = {
+        "selection-recurrence-changed": (gobject.SIGNAL_RUN_LAST,
+                                         gobject.TYPE_NONE,
+                                         ()),
+        "date-changed": (gobject.SIGNAL_RUN_LAST,
+                         gobject.TYPE_NONE,
+                         ()),
+        "selected-changed": (gobject.SIGNAL_RUN_LAST,
+                             gobject.TYPE_NONE,
+                             ())
+        }
+
+    def __init__(self, *args, **kwargs):
+        gobject.GObject.__init__(self, *args, **kwargs)
+
 class WeekView(CustomWidget):
 
     __gtype_name__ = "WeekView"
@@ -143,32 +195,19 @@ class WeekView(CustomWidget):
     hour_height = gobject.property(type=float, default=settings.hour_height)
     day_width = gobject.property(type=float, default=settings.day_width)
     
-    date = gobject.property(type=float,
-        default=datetime.date.today().toordinal())
-    selected = gobject.property(type=gobject.TYPE_PYOBJECT)
     handle_locations = None
 
-    __gsignals__ = {
-        "selection-recurrence-changed": (gobject.SIGNAL_RUN_LAST,
-                                         gobject.TYPE_NONE,
-                                         ())
-        
-        }
-    
-    _sr = None
-
-    def _get_sr(self):
-        return self._sr
-
-    def _set_sr(self, value):
-        self._sr = value
-        self.emit("selection-recurrence-changed")
-
-    selection_recurrence = property(_get_sr, _set_sr)
-
-    def __init__(self, undo, history, *args, **kwargs):
+    def __init__(self, info, undo, history, *args, **kwargs):
         CustomWidget.__init__(self, *args, **kwargs)
         self.editing = False
+        
+        self.info = info
+        info.connect("date-changed", self.info_changed)
+        info.connect("selection-recurrence-changed", self.info_changed)
+        info.connect("selected-changed", self.info_changed)
+        self.date = info.date
+        self.selection_recurrence = info.selection_recurrence
+        self.selected = info.selected
                 
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
@@ -179,7 +218,6 @@ class WeekView(CustomWidget):
         self.ti = TextInput(self.text_changed_cb)
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
-        self.selection_recurrence = None
 
         self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
         self.scrolling.observe(self)
@@ -191,6 +229,12 @@ class WeekView(CustomWidget):
                               SelectArea),
             click_commands = (SelectPoint,))
         self.dispatcher.observe(self)
+
+    def info_changed(self, info):
+        self.selection_recurrence = info.selection_recurrence
+        self.date = info.date
+        self.selected = info.selected
+        self.queue_draw()
 
     def _blink_cursor(self):
         if not self.editing:
@@ -501,12 +545,12 @@ class WeekView(CustomWidget):
         end_time = datetime.time(end.hour, end.minute)
 
         if (end_date - start_date).days < 4:
-            self.selection_recurrence = recurrence.Period(
+            self.info.selection_recurrence = recurrence.Period(
                 recurrence.DateSet(*recurrence.dateRange(start_date, end_date)),
                 start_time,
                 end_time)
         else:
-            self.selection_recurrence = recurrence.Period(
+            self.info.selection_recurrence = recurrence.Period(
                 recurrence.Until(recurrence.Daily(start_date, 1), end_date),
                 start_time,
                 end_time)
@@ -525,7 +569,7 @@ class WeekView(CustomWidget):
             return None
 
     def select_occurrence(self, occurrence):
-        self.selected = occurrence
+        self.info.selected = occurrence
         if occurrence:
             self.configure_editor(self.get_occurence_event(occurrence))
         self.queue_draw()
@@ -559,12 +603,12 @@ class SelectPoint(Command):
 
     def do(self):
         self.instance.select_point(*self.point)
-        self.instance.selection_recurrence = None
+        self.instance.info.selection_recurrence = None
         return True
 
     def undo(self):
         self.instance.select_occurrence(self.selected)
-        self.instance.selection_recurrence = self.selection
+        self.instance.info.selection_recurrence = self.selection
 
 class SelectArea(MouseCommand):
 
@@ -596,7 +640,7 @@ class SelectArea(MouseCommand):
 
     def undo(self):
         self.instance.select_occurrence(self.selected)
-        self.instance.selection_recurrence = self.selection_recurrence
+        self.instance.info.selection_recurrence = self.selection_recurrence
 
 class SelectRecurrence(Command):
 
@@ -611,11 +655,11 @@ class SelectRecurrence(Command):
         self.do()
 
     def do(self):
-        self.app.weekview.selection_recurrence = self.new
+        self.app.info.selection_recurrence = self.new
         self.app.weekview.selected = None
 
     def undo(self):
-        self.app.weekview.selected = self.selected
+        self.app.info.selected = self.selected
         self.app.weekview.selection_recurrence = self.old
 
 class SetEventRecurrence(Command):
@@ -658,7 +702,7 @@ class MoveEvent(MouseCommand):
 
     def undo(self):
         self.event.recurrence = self.old
-        self.instance.selected = self.selected
+        self.instance.info.selected = self.selected
 
 class SetEventStart(MouseCommand):
 
@@ -728,10 +772,10 @@ class DragCalendar(MouseCommand):
 
     def do(self):
         if self.flick_pos is None:
-            self.instance.date = (self.pos - (self.rel[0] / self.instance.scale) /
+            self.instance.info.date = (self.pos - (self.rel[0] / self.instance.scale) /
                                   self.instance.day_width)
         else:
-            self.instance.date = self.flick_pos
+            self.instance.info.date = self.flick_pos
 
     def undo(self):
         self.instance.date = self.pos
@@ -762,13 +806,13 @@ class NewEvent(MenuCommand):
 
     def do(self):
         self.app.model.add_event(self.event)
-        self.app.weekview.selection_recurrence = None
+        self.app.info.selection_recurrence = None
         self.app.weekview.queue_draw()
         return True
 
     def undo(self):
         self.app.model.del_event(self.event)
-        self.app.weekview.selection_recurrence = self.selection
+        self.app.info.selection_recurrence = self.selection
         self.app.weekview.selected = None
         return True
 
@@ -829,7 +873,7 @@ class GoToSelected(MenuCommand):
         self.date = self.app.weekview.date
 
     def do(self):
-        self.app.weekview.date = self.selected.start.toordinal()
+        self.app.info.date = self.selected.start.toordinal()
 
     def undo(self):
         self.app.weekview.date = self.date
@@ -894,7 +938,8 @@ class App(object):
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
         hbox = gtk.HBox()
-        self.weekview = WeekView(self.undo, self.history)
+        self.info = CalendarInfo()
+        self.weekview = WeekView(self.info, self.undo, self.history)
         self.model = self.weekview.model
         hbox.pack_start(self.weekview)
         self.scrollbar = gtk.VScrollbar()
@@ -933,7 +978,7 @@ class App(object):
         w.show_all()
         self.window = w
         self.weekview.connect("notify::selected", self.update_actions)
-        self.weekview.connect("selection-recurrence-changed", self.update_actions)
+        self.info.connect("selection-recurrence-changed", self.update_actions)
         self.weekview.connect("notify::height", self.update_scroll_adjustment)
         self.weekview.connect("notify::scale", self.update_scroll_adjustment)
         self.selection_entry.connect("key-press-event", self.selection_entry_key_press_cb)
