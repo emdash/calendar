@@ -9,7 +9,6 @@ DEPENDENCIES
  python 2.x series (not python 3k)
  pygtk
  pycairo
- pygoocanvas
  ply (python parser-generator)
  
 USAGE

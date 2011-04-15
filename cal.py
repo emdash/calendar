@@ -24,7 +24,6 @@ import gtk
 import pango
 import pangocairo
 import cairo
-import goocanvas
 import gobject
 import datetime
 import math
@@ -47,7 +46,6 @@ import time
 #TODO: go to next {week, month}
 #TODO: make calendar view "roll" so that sunday is always on the left
 #TODO: change cursors
-#TODO: port away from goocanvas ?
 #TODO: do something sane when events overlap
 #TODO: specify working day (hide unused hours)
 #TODO: tomboy integration
@@ -842,7 +840,7 @@ class SwitchViews(MenuCommand):
     undoable = False
 
     def do(self):
-        self.app.weekview.props.visibility = goocanvas.ITEM_INVISIBLE
+        self.app.weekview.hide()
         
 class App(object):
 
