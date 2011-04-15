@@ -35,6 +35,7 @@ class MouseCommand(Command):
     rel = None
     shift = None
     control = None
+    cursor = None
 
     @classmethod
     def create_for_point(cls, instance, abs):

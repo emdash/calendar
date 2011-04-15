@@ -25,8 +25,9 @@ from behavior import MouseInteraction
 class MouseCommandDispatcher(MouseInteraction):
 
     area = "ensures point-in-area-is-called"
+    cursor = gtk.gdk.Cursor(gtk.gdk.LEFT_PTR)
 
-    def __init__(self, undo, drag_commands, click_commands=()):
+    def __init__(self, undo, drag_commands, click_commands=(), cursor=None):
         self.selected = None
         self.item = None
         self.undo = undo
@@ -34,6 +35,21 @@ class MouseCommandDispatcher(MouseInteraction):
         self.command = None
         self.drag_commands = drag_commands
         self.click_commands = click_commands
+        self.cursor = cursor if cursor else None
+        self.cur_cursor = self.cursor
+
+    def motion_notify(self):
+        cmd = self.find_command((cmd for cmd in self.drag_commands
+                                 if cmd.cursor))
+        if cmd:
+            self.set_cursor(cmd.cursor)
+        else:
+            self.set_cursor(self.cursor)
+            
+    def set_cursor(self, cursor):
+        if cursor != self.cur_cursor:
+            self.instance.window.set_cursor(cursor)
+            self.cur_cursor = cursor
 
     def point_in_area(self, point):
         return (self.can_do(self.drag_commands, point) or
@@ -44,15 +60,22 @@ class MouseCommandDispatcher(MouseInteraction):
             self.command.flick_stop()
 
     def drag_start(self):
-        self.command = self.find_command(self.drag_commands)
+        self.command = self.find_and_create_command(self.drag_commands)
 
     def can_do(self, commands, point):
         return any((cmd.can_do(self.instance, point) for cmd in commands))
     
     def find_command(self, commands):
         for command in commands:
-            ret = command.create_for_point(self.instance, self.abs)
-            if ret: return ret
+            if command.can_do(self.instance, self.abs):
+                return command
+        return None
+
+    def find_and_create_command(self, commands):
+        cmd = self.find_command(commands)
+        if cmd:
+            return cmd.create_for_point(self.instance, self.abs)
+        return None
 
     def move(self):
         if self.command:
@@ -69,7 +92,7 @@ class MouseCommandDispatcher(MouseInteraction):
                                not self.event.state & gtk.gdk.SHIFT_MASK)
 
     def click(self):
-        cmd = self.find_command(self.click_commands)
+        cmd = self.find_and_create_command(self.click_commands)
         if cmd:
             cmd.do()
             self.undo.commit(cmd)
