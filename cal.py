@@ -595,6 +595,10 @@ class SelectPoint(Command):
     def create_for_point(cls, instance, point):
         return cls(instance, *point)
 
+    @classmethod
+    def can_do(cls, instance, point):
+        return True
+
     def __init__(self, instance, x, y):
         self.instance = instance
         self.point = x, y
@@ -685,6 +689,10 @@ class MoveEvent(MouseCommand):
         event = instance.point_to_event(*abs)
         if event:
             return MoveEvent(instance, event, abs)
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return not (instance.point_to_event(*abs) is None)
 
     def __init__(self, instance, event, abs):
         self.instance = instance
