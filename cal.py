@@ -199,7 +199,6 @@ class WeekView(CustomWidget):
     def __init__(self, info, undo, history, *args, **kwargs):
         CustomWidget.__init__(self, *args, **kwargs)
         self.editing = False
-        
         self.info = info
         info.connect("date-changed", self.info_changed)
         info.connect("selection-recurrence-changed", self.info_changed)
@@ -218,7 +217,9 @@ class WeekView(CustomWidget):
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
 
-        self.scrolling = MouseCommandDispatcher(history, (DragCalendar,))
+        self.scrolling = MouseCommandDispatcher(history,
+                                                (DragCalendarHorizontal,
+                                                 DragCalendarVertical))
         self.scrolling.observe(self)
         self.dispatcher = MouseCommandDispatcher(
             undo,
@@ -768,7 +769,7 @@ class SetEventEnd(MouseCommand):
     def undo(self):
         self.recurrence.end = self.pos
 
-class DragCalendar(MouseCommand):
+class DragCalendarHorizontal(MouseCommand):
 
     cursor = gtk.gdk.Cursor(gtk.gdk.HAND1)
 
@@ -804,6 +805,28 @@ class DragCalendar(MouseCommand):
 
     def _upate_pos(self):
         self.flick_pos = self.instance.date
+
+class DragCalendarVertical(MouseCommand):
+
+    undoable = False
+
+    cursor = gtk.gdk.Cursor(gtk.gdk.HAND1)
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return ((instance.x <= abs[0] <= instance.x + instance.day_width) and
+                (abs[1] > instance.y + instance.hour_height))
+
+    def __init__(self, instance, abs):
+        self.instance = instance
+        self.pos = self.instance.y_scroll_offset
+
+    def do(self):
+        self.instance.y_scroll_offset = max(
+            -((self.instance.hour_height * 25) - self.instance.height),
+            min(
+                0, self.pos + self.rel[1]))
+
 
 class NewEvent(MenuCommand):
 
@@ -957,13 +980,6 @@ class App(object):
         self.weekview = WeekView(self.info, self.undo, self.history)
         self.model = self.weekview.model
         hbox.pack_start(self.weekview)
-        self.scrollbar = gtk.VScrollbar()
-        hbox.pack_start(self.scrollbar, False, False)
-
-        self.scrollbar.connect("value-changed", self.update_scroll_pos)
-        self.update_scroll_adjustment(None)
-        self.scrollbar.set_value(datetime.datetime.now().hour *
-            self.weekview.hour_height)
 
         uiman = gtk.UIManager ()
         actiongroup = MenuCommand.create_action_group(self)
@@ -994,8 +1010,6 @@ class App(object):
         self.window = w
         self.weekview.connect("notify::selected", self.update_actions)
         self.info.connect("selection-recurrence-changed", self.update_actions)
-        self.weekview.connect("notify::height", self.update_scroll_adjustment)
-        self.weekview.connect("notify::scale", self.update_scroll_adjustment)
         self.selection_entry.connect("key-press-event", self.selection_entry_key_press_cb)
 
     def pack_toolbar_widget(self, toolbar, widget):
@@ -1038,13 +1052,6 @@ class App(object):
             b.apply_tag_by_name("error",
                                 b.get_iter_at_offset(pos),
                                 b.get_end_iter())
-
-    def update_scroll_pos(self, scrollbar):
-        self.weekview.y_scroll_offset = -scrollbar.get_value()
-
-    def update_scroll_adjustment(self, *unused):
-        self.scrollbar.set_range(0, self.weekview.hour_height * 25 -
-            self.weekview.height)
 
     def update_actions(self, *unused):
         MenuCommand.update_actions(self)
