@@ -22,21 +22,15 @@
 
 import gtk
 import pango
-import pangocairo
-import cairo
 import gobject
 import datetime
-import math
 from gettext import gettext as _
-from schedule import Schedule, Event
-from command import UndoStack, MenuCommand, Command, MouseCommand
-from behavior import MouseInteraction, TextInput, Animation
-from dispatcher import MouseCommandDispatcher
+from schedule import Event
+from command import UndoStack, MenuCommand, Command
 from calendarwidget import CalendarInfo
 from weekview import WeekViewHeader, WeekView
 import recurrence
 import settings
-import shapes
 import parser
 import os
 import time
