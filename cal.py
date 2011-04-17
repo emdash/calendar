@@ -235,10 +235,10 @@ class App(object):
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
         weekviewbox = gtk.VBox()
-        self.info = CalendarInfo()
+        self.model = Schedule("schedule.csv")
+        self.info = CalendarInfo(self.model)
         self.weekviewheader = WeekViewHeader(self.info, self.history)
         self.weekview = WeekView(self.info, self.undo)
-        self.model = self.weekview.model
         weekviewbox.pack_start(self.weekviewheader, False, False)
         weekviewbox.pack_start(self.weekview, True, True)
 
