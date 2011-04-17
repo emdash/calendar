@@ -49,6 +49,7 @@ import time
 #      clicking creates an event with a default duration
 #      clicking and dragging creates an event over the specified area (min 15 min)
 #TODO: exceptions to recurrences
+#TODO: mousewheel scrolling / zooming
     
 class SelectRecurrence(Command):
 
