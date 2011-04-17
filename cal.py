@@ -25,7 +25,7 @@ import pango
 import gobject
 import datetime
 from gettext import gettext as _
-from schedule import Event
+from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command
 from calendarwidget import CalendarInfo
 from weekview import WeekViewHeader, WeekView

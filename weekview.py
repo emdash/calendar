@@ -128,6 +128,7 @@ class WeekViewHeader(WeekViewBase):
             settings.heading_outline_color,
             settings.text_color)
 
+class WeekView(WeekViewBase):
 
     __gtype_name__ = "WeekView"
 
