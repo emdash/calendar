@@ -29,6 +29,7 @@ from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command
 from calendarwidget import CalendarInfo
 from weekview import WeekView
+from monthview import MonthView
 import recurrence
 import settings
 import parser
@@ -237,6 +238,7 @@ class App(object):
         self.model = Schedule("schedule.csv")
         self.info = CalendarInfo(self.model)
         self.weekview = WeekView(self.info, self.undo, self.history)
+        self.monthview = MonthView(self.info, self.undo, self.history)
 
         uiman = gtk.UIManager ()
         actiongroup = MenuCommand.create_action_group(self)
@@ -253,6 +255,7 @@ class App(object):
         vbox.pack_start (toolbar, False, False)
 
         vbox.pack_start(self.weekview, True, True)
+        vbox.pack_start(self.monthview, True, True)
 
         toolbar = uiman.get_widget("/lowerToolbar")
 
@@ -266,6 +269,7 @@ class App(object):
 
         w.add(vbox)
         w.show_all()
+        self.monthview.hide()
         self.window = w
         self.weekview.connect("notify::selected", self.update_actions)
         self.info.connect("selection-recurrence-changed", self.update_actions)
@@ -347,8 +351,10 @@ class App(object):
     def switch_views(self):
         if self.weekview.props.visible:
             self.weekview.hide()
+            self.monthview.show()
         else:
             self.weekview.show()
+            self.monthview.hide()
 
     def do_command(self, unused_action, command):
         cmd = command(self)
