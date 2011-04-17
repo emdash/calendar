@@ -54,8 +54,8 @@ class SelectRecurrence(Command):
 
     def __init__(self, app, text):
         self.app = app
-        self.selected = app.weekview.selected
-        self.old = app.weekview.selection_recurrence
+        self.selected = app.info.selected
+        self.old = app.info.selection_recurrence
         if text:
             self.new = parser.parse(text)
         else:
@@ -64,17 +64,17 @@ class SelectRecurrence(Command):
 
     def do(self):
         self.app.info.selection_recurrence = self.new
-        self.app.weekview.selected = None
+        self.app.info.selected = None
 
     def undo(self):
         self.app.info.selected = self.selected
-        self.app.weekview.selection_recurrence = self.old
+        self.app.info.selection_recurrence = self.old
 
 class SetEventRecurrence(Command):
 
     def __init__(self, app, text):
         self.app = app
-        self.selected = self.app.weekview.selected
+        self.selected = self.app.info.selected
         self.event = self.app.weekview.get_occurence_event(self.selected)
         self.old = self.event.recurrence
         self.new = parser.parse(text)
@@ -94,10 +94,10 @@ class NewEvent(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return app.weekview.selection_recurrence != None
+        return app.info.selection_recurrence != None
     
     def configure(self):
-        self.selection = self.app.weekview.selection_recurrence
+        self.selection = self.app.info.selection_recurrence
         self.event = Event(self.selection, "New Event")
 
     def do(self):
@@ -120,10 +120,10 @@ class DelEvent(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return app.weekview.selected != None
+        return app.info.selected != None
 
     def configure(self):
-        self.selected = self.app.weekview.selected
+        self.selected = self.app.info.selected
         self.event = self.app.weekview.occurrences[self.selected][0]
 
     def do(self):
@@ -133,7 +133,7 @@ class DelEvent(MenuCommand):
 
     def undo(self):
         self.app.model.add_event(self.event)
-        self.app.weekview.select_occurrence(self.selected)
+        self.app.info.select_occurrence(self.selected)
         return True
 
 class GoToToday(MenuCommand):
@@ -147,10 +147,10 @@ class GoToToday(MenuCommand):
 
     def configure(self):
         self.today = datetime.datetime.today().toordinal()
-        self.date = self.app.weekview.date
+        self.date = self.app.info.date
 
     def do(self):
-        self.app.weekview.date = self.today
+        self.app.info.date = self.today
 
     def undo(self):
         self.ap.schedule.date = self.date
@@ -162,17 +162,17 @@ class GoToSelected(MenuCommand):
 
     @classmethod
     def can_do(cls, app):
-        return bool(app.weekview.selected)
+        return bool(app.info.selected)
 
     def configure(self):
-        self.selected = self.app.weekview.selected
-        self.date = self.app.weekview.date
+        self.selected = self.app.info.selected
+        self.date = self.app.info.date
 
     def do(self):
         self.app.info.date = self.selected.start.toordinal()
 
     def undo(self):
-        self.app.weekview.date = self.date
+        self.app.info.date = self.date
 
 class ZoomIn(MenuCommand):
 
