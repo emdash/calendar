@@ -178,27 +178,16 @@ class CalendarInfo(gobject.GObject):
     def __init__(self, *args, **kwargs):
         gobject.GObject.__init__(self, *args, **kwargs)
 
-class WeekView(CustomWidget):
+class CalendarWidget(CustomWidget):
 
-    __gtype_name__ = "WeekView"
-
-    x = gobject.property(type=int, default=0)
-    y = gobject.property(type=int, default=0)
+    __gtype_name__ = "CalendarWidget"
     
     _day_width = settings.day_width
-    _y_scroll_offset = 0
-    
-    height = scaled_property("height")
-    y_scroll_offset = scaled_property("y_scroll_offset")
-    
     hour_height = gobject.property(type=float, default=settings.hour_height)
     day_width = gobject.property(type=float, default=settings.day_width)
-    
-    handle_locations = None
 
-    def __init__(self, info, undo, history, *args, **kwargs):
+    def __init__(self, info, *args, **kwargs):
         CustomWidget.__init__(self, *args, **kwargs)
-        self.editing = False
         self.info = info
         info.connect("date-changed", self.info_changed)
         info.connect("selection-recurrence-changed", self.info_changed)
@@ -206,6 +195,96 @@ class WeekView(CustomWidget):
         self.date = info.date
         self.selection_recurrence = info.selection_recurrence
         self.selected = info.selected
+        
+    def info_changed(self, info):
+        self.selection_recurrence = info.selection_recurrence
+        self.date = info.date
+        self.selected = info.selected
+        self.queue_draw()
+
+    def get_week_pixel_offset(self):
+        return self.day_width - (self.date * self.day_width % self.day_width)
+    
+    def days_visible(self):
+        return int(self.width / self.day_width)
+
+    def get_date(self, i):
+        return datetime.date.fromordinal(int(i))
+
+class WeekViewHeader(CalendarWidget):
+
+    def __init__(self, info, history, *args, **kwargs):
+        CalendarWidget.__init__(self, info, *args, **kwargs)
+        self.scrolling = MouseCommandDispatcher(
+            history,
+            (DragCalendarHorizontal,))
+        self.scrolling.observe(self)
+        self.set_size_request(600, int(self.hour_height))
+
+    def paint(self, cr):
+        self.draw_day_headers(cr)
+        self.draw_top_left_corner(cr)
+
+    def draw_day_header(self, cr, nth_day):
+        x = self.get_week_pixel_offset() + nth_day * self.day_width
+        leftmost_day = int(self.date)
+        
+        date = self.get_date(leftmost_day + nth_day)
+        weekday = date.weekday()
+
+        if weekday > 4:
+            bgcolor = settings.weekday_bg_color
+        else:
+            bgcolor = settings.weekend_bg_color
+
+        area = shapes.Area(x, 0, self.day_width, self.height)
+
+        shapes.labeled_box(
+            cr,
+            area,
+            date.strftime("%a\n%x"),
+            bgcolor,
+            settings.heading_outline_color,
+            settings.text_color)
+
+    def draw_day_headers(self, cr):
+        cr.save()
+        cr.rectangle(self.day_width, 0, self.width - self.day_width,
+            self.height)
+        cr.clip()
+
+        for i in xrange(0, (self.days_visible()) + 1):
+            self.draw_day_header(cr, i)
+        cr.restore()
+        
+    def draw_top_left_corner(self, cr):
+        area = shapes.Area(0, 0, self.day_width, self.hour_height)
+
+        shapes.labeled_box(
+            cr,
+            area,
+            datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
+            settings.corner_bg_color,
+            settings.heading_outline_color,
+            settings.text_color)
+
+class WeekView(CalendarWidget):
+
+    __gtype_name__ = "WeekView"
+
+    x = gobject.property(type=int, default=0)
+    y = gobject.property(type=int, default=0)
+    
+    _y_scroll_offset = 0
+    
+    height = scaled_property("height")
+    y_scroll_offset = scaled_property("y_scroll_offset")
+    
+    handle_locations = None
+
+    def __init__(self, info, undo, *args, **kwargs):
+        CalendarWidget.__init__(self, info, *args, **kwargs)
+        self.editing = False
                 
         self.model = Schedule("schedule.csv")
         self.model.set_changed_cb(self.model_changed)
@@ -217,24 +296,15 @@ class WeekView(CustomWidget):
         self.ti.observe(self)
         gobject.timeout_add(500, self._blink_cursor)
 
-        self.scrolling = MouseCommandDispatcher(history,
-                                                (DragCalendarHorizontal,
-                                                 DragCalendarVertical))
-        self.scrolling.observe(self)
         self.dispatcher = MouseCommandDispatcher(
             undo,
-            drag_commands = (SetEventStart,
+            drag_commands = (DragCalendarVertical,
+                             SetEventStart,
                               SetEventEnd,
                               MoveEvent,
                               SelectArea),
             click_commands = (SelectPoint,))
         self.dispatcher.observe(self)
-
-    def info_changed(self, info):
-        self.selection_recurrence = info.selection_recurrence
-        self.date = info.date
-        self.selected = info.selected
-        self.queue_draw()
 
     def _blink_cursor(self):
         if not self.editing:
@@ -246,16 +316,10 @@ class WeekView(CustomWidget):
     def model_changed(self):
         self.queue_draw()
 
-    def get_date(self, i):
-        return datetime.date.fromordinal(int(i))
-
-    def days_visible(self):
-        return int(self.width / self.day_width)
-
     def point_to_datetime(self, x, y, snap=True):
         x /= self.scale
         y /= self.scale
-        hour = ((y + (- self.y_scroll_offset)- self.hour_height) /
+        hour = ((y + (- self.y_scroll_offset)) /
             self.hour_height)
         if snap:
             minute = quantize(hour % 1 * 60, 15)
@@ -289,7 +353,7 @@ class WeekView(CustomWidget):
         
         return (
             ((dt.toordinal() - self.date + 1) * self.day_width),
-            (dt.hour + 1 + dt.minute / 60.0)
+            (dt.hour + dt.minute / 60.0)
             * self.hour_height + self.y_scroll_offset)
 
     def area_from_start_end(self, start, end):
@@ -308,9 +372,6 @@ class WeekView(CustomWidget):
     def point_to_event(self, x, y):
         ret = self.point_to_occurrence(x, y)
         return ret[0] if ret else None
-
-    def get_week_pixel_offset(self):
-        return self.day_width - (self.date * self.day_width % self.day_width)
         
     def selection_handles(self, cr):
         area = self.occurrences[self.selected][1]
@@ -347,63 +408,29 @@ class WeekView(CustomWidget):
 
     def draw_grid(self, cr):
         cr.save()
-        cr.rectangle(self.day_width, self.hour_height, 
-            self.width - self.day_width, self.height - self.hour_height)
+        cr.rectangle(self.day_width, 0, 
+            self.width - self.day_width, self.height)
         cr.clip()
 
         cr.set_source(settings.grid_line_color)
-        for i in xrange(1, 26):
+        for i in xrange(1, 25):
             cr.move_to(self.day_width, self.y_scroll_offset + i * self.hour_height)
             cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
             cr.stroke()
 
         x = self.get_week_pixel_offset()
-        max_height = min(self.hour_height * 25 + self.y_scroll_offset, self.height)
+        max_height = min(self.hour_height * 24 + self.y_scroll_offset, self.height)
 
         for i in xrange(0, (self.days_visible()) + 1):
             # draw vertical lines
             x += self.day_width
-            cr.move_to (x, self.hour_height)
+            cr.move_to (x, 0)
             cr.line_to (x, max_height)
             cr.stroke()
-
-    def draw_day_header(self, cr, nth_day):
-        x = self.get_week_pixel_offset() + nth_day * self.day_width
-        y = self.y
-        leftmost_day = int(self.date)
-        
-        date = self.get_date(leftmost_day + nth_day)
-        weekday = date.weekday()
-
-        if weekday > 4:
-            bgcolor = settings.weekday_bg_color
-        else:
-            bgcolor = settings.weekend_bg_color
-
-        area = shapes.Area(x, y, self.day_width, self.hour_height)
-
-        shapes.labeled_box(
-            cr,
-            area,
-            date.strftime("%a\n%x"),
-            bgcolor,
-            settings.heading_outline_color,
-            settings.text_color)
-
-    def draw_day_headers(self, cr):
-        cr.save()
-        cr.rectangle(self.day_width, self.y, self.width - self.day_width,
-            self.height)
-        cr.clip()
-
-        for i in xrange(0, (self.days_visible()) + 1):
-            self.draw_day_header(cr, i)
-            
-        cr.restore()
         
     def draw_hour_header(self, cr, hour):
         area = shapes.Area(0,
-                           (hour + 1) * self.hour_height + self.y_scroll_offset,
+                           hour * self.hour_height + self.y_scroll_offset,
                            self.day_width,
                            self.hour_height)
         
@@ -417,8 +444,7 @@ class WeekView(CustomWidget):
 
     def draw_hour_headers(self, cr):
         cr.save()
-        cr.rectangle(0, self.hour_height, self.day_width, self.height -
-            self.hour_height)
+        cr.rectangle(0, 0, self.day_width, self.height)
         cr.clip()
 
         for i in range(0, 24):
@@ -489,21 +515,10 @@ class WeekView(CustomWidget):
             text = "%dh %dm" % (h, m)
             shapes.centered_text(cr, area, text, settings.text_color)
 
-    def draw_top_left_corner(self, cr):
-        area = shapes.Area(0, 0, self.day_width, self.hour_height)
-
-        shapes.labeled_box(
-            cr,
-            area,
-            datetime.date.fromordinal(int(self.date + 1)).strftime("%x"),
-            settings.corner_bg_color,
-            settings.heading_outline_color,
-            settings.text_color)
-
     def draw_comfort_lines(self, cr):
         cr.set_source(settings.comfort_line_color)
-        cr.move_to(self.x, self.hour_height)
-        cr.line_to(self.width, self.hour_height)
+        cr.move_to(self.x, 0)
+        cr.line_to(self.width, 0)
         cr.stroke()
 
         cr.move_to(self.day_width, self.y)
@@ -515,21 +530,18 @@ class WeekView(CustomWidget):
         cr.scale(self.scale, self.scale)
 
         self.clear_background(cr)
-        self.draw_day_headers(cr)
         self.draw_hour_headers(cr)
         self.draw_grid(cr)
         self.draw_events(cr)
         
         cr.save()
-        cr.rectangle(self.day_width, self.hour_height,
-                     self.width - self.day_width, self.height - self.hour_height)
+        cr.rectangle(self.day_width, 0,
+                     self.width - self.day_width, self.height)
         cr.clip()
         self.draw_marquee(cr)
         if (self.selected) and (self.selected in self.occurrences):
             self.selection_handles (cr)
         cr.restore()
-        
-        self.draw_top_left_corner (cr)
         self.draw_comfort_lines(cr)
 
     def select_area(self, x, y, width, height, quantize=True):
@@ -775,8 +787,8 @@ class DragCalendarHorizontal(MouseCommand):
 
     @classmethod
     def can_do(cls, instance, abs):
-        return (instance.x <= abs[0] / instance.scale <= instance.width and 
-                instance.y <= abs[1] / instance.scale <= instance.hour_height)
+        return (0 <= abs[0] / instance.scale <= instance.width and 
+                0 <= abs[1] / instance.scale <= instance.hour_height)
 
 
     def __init__(self, instance, abs):
@@ -975,11 +987,13 @@ class App(object):
         w = gtk.Window()
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
-        hbox = gtk.HBox()
+        weekviewbox = gtk.VBox()
         self.info = CalendarInfo()
-        self.weekview = WeekView(self.info, self.undo, self.history)
+        self.weekviewheader = WeekViewHeader(self.info, self.history)
+        self.weekview = WeekView(self.info, self.undo)
         self.model = self.weekview.model
-        hbox.pack_start(self.weekview)
+        weekviewbox.pack_start(self.weekviewheader, False, False)
+        weekviewbox.pack_start(self.weekview, True, True)
 
         uiman = gtk.UIManager ()
         actiongroup = MenuCommand.create_action_group(self)
@@ -994,7 +1008,9 @@ class App(object):
         uiman.add_ui_from_string(self.ui)
         toolbar = uiman.get_widget("/upperToolbar")
         vbox.pack_start (toolbar, False, False)
-        vbox.pack_start (hbox, True, True)
+
+        vbox.pack_start(weekviewbox, True, True)
+
         toolbar = uiman.get_widget("/lowerToolbar")
 
         self.selection_buffer = gtk.TextBuffer()
@@ -1003,7 +1019,7 @@ class App(object):
         self.selection_entry = gtk.TextView(self.selection_buffer)
         
         self.pack_toolbar_widget(toolbar, self.selection_entry)
-        vbox.pack_start (toolbar, False, False)
+        vbox.pack_end (toolbar, False, False)
 
         w.add(vbox)
         w.show_all()
