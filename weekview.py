@@ -67,6 +67,12 @@ class WeekViewHeader(CalendarWidget):
     def paint(self, cr):
         self.draw_day_headers(cr)
         self.draw_top_left_corner(cr)
+        cr.move_to(0, self.height)
+        cr.line_to(self.width, self.height)
+        cr.set_source(settings.comfort_line_color)
+        cr.move_to(self.day_width, 0)
+        cr.line_to(self.day_width, self.height)
+        cr.stroke()
 
     def draw_day_header(self, cr, nth_day):
         x = self.get_week_pixel_offset() + nth_day * self.day_width
@@ -101,7 +107,7 @@ class WeekViewHeader(CalendarWidget):
         cr.restore()
         
     def draw_top_left_corner(self, cr):
-        area = shapes.Area(0, 0, self.day_width, self.hour_height)
+        area = shapes.Area(0, 0, self.day_width, self.height)
 
         shapes.labeled_box(
             cr,
