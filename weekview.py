@@ -55,6 +55,10 @@ class KineticScrollAnimation(Animation):
             self.stop()
 
 class WeekViewBase(CalendarWidget):
+    
+    _day_width = settings.day_width
+    hour_height = gobject.property(type=float, default=settings.hour_height)
+    day_width = gobject.property(type=float, default=settings.day_width)
 
     def clear_background(self, cr):
         cr.rectangle(0, 0, self.width, self.height)

@@ -83,10 +83,6 @@ class CustomWidget(gtk.DrawingArea):
 class CalendarWidget(CustomWidget):
 
     __gtype_name__ = "CalendarWidget"
-    
-    _day_width = settings.day_width
-    hour_height = gobject.property(type=float, default=settings.hour_height)
-    day_width = gobject.property(type=float, default=settings.day_width)
 
     def __init__(self, info, *args, **kwargs):
         CustomWidget.__init__(self, *args, **kwargs)
