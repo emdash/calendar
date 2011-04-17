@@ -91,9 +91,11 @@ class CalendarWidget(CustomWidget):
     def __init__(self, info, *args, **kwargs):
         CustomWidget.__init__(self, *args, **kwargs)
         self.info = info
+        self.model = info.model
         info.connect("date-changed", self.info_changed)
         info.connect("selection-recurrence-changed", self.info_changed)
         info.connect("selected-changed", self.info_changed)
+        info.connect("model-changed", self.info_changed)
         self.date = info.date
         self.selection_recurrence = info.selection_recurrence
         self.selected = info.selected
@@ -159,8 +161,17 @@ class CalendarInfo(gobject.GObject):
                          ()),
         "selected-changed": (gobject.SIGNAL_RUN_LAST,
                              gobject.TYPE_NONE,
-                             ())
+                             ()),
+        "model-changed" : (gobject.SIGNAL_RUN_LAST,
+                           gobject.TYPE_NONE,
+                           ())
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model, *args, **kwargs):
         gobject.GObject.__init__(self, *args, **kwargs)
+        self.model = model
+        self.model.set_changed_cb(self.model_changed)
+
+    def model_changed(self):
+        self.emit("model-changed")
+
