@@ -142,6 +142,11 @@ def centered_text(cr, lyt, area):
 def left_aligned_text(cr, lyt, area):
     cr.move_to(area.x, area.y)
 
+@text_function
+def right_aligned_text(cr, lyt, area):
+    lyt.set_alignment(pango.ALIGN_RIGHT)
+    cr.move_to(area.x, area.y)
+
 @subpath
 def text_above(cr, text, x, y, width):
     tw, th = cr.text_extents(text)[2:4]
