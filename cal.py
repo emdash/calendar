@@ -28,7 +28,7 @@ from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command
 from calendarwidget import CalendarInfo
-from weekview import WeekViewHeader, WeekView, UntimedEvents
+from weekview import WeekView
 import recurrence
 import settings
 import parser
@@ -76,7 +76,7 @@ class SetEventRecurrence(Command):
     def __init__(self, app, text):
         self.app = app
         self.selected = self.app.info.selected
-        self.event = self.app.weekview.get_occurence_event(self.selected)
+        self.event = self.app.weekview.timed.get_occurence_event(self.selected)
         self.old = self.event.recurrence
         self.new = parser.parse(text)
         self.do()
@@ -110,7 +110,7 @@ class NewEvent(MenuCommand):
     def undo(self):
         self.app.model.del_event(self.event)
         self.app.info.selection_recurrence = self.selection
-        self.app.weekview.selected = None
+        self.app.info.selected = None
         return True
 
 class DelEvent(MenuCommand):
@@ -125,16 +125,16 @@ class DelEvent(MenuCommand):
 
     def configure(self):
         self.selected = self.app.info.selected
-        self.event = self.app.weekview.occurrences[self.selected][0]
+        self.event = self.app.weekview.timed.occurrences[self.selected][0]
 
     def do(self):
         self.app.model.del_event(self.event)
-        self.app.weekview.select_occurrence(None)
+        self.app.weekview.timed.select_occurrence(None)
         return True
 
     def undo(self):
         self.app.model.add_event(self.event)
-        self.app.info.select_occurrence(self.selected)
+        self.app.weekview.timed.select_occurrence(self.selected)
         return True
 
 class GoToToday(MenuCommand):
@@ -199,7 +199,7 @@ class SwitchViews(MenuCommand):
     undoable = False
 
     def do(self):
-        self.app.weekview.hide()
+        self.app.switch_views()
         
 class App(object):
 
@@ -234,17 +234,9 @@ class App(object):
         w = gtk.Window()
         w.connect("destroy", gtk.main_quit)
         vbox = gtk.VBox()
-        weekviewbox = gtk.VBox()
         self.model = Schedule("schedule.csv")
         self.info = CalendarInfo(self.model)
-        self.weekviewheader = WeekViewHeader(self.info, self.history)
-        self.weekview = WeekView(self.info, self.undo)
-        self.untimed = UntimedEvents(self.info, self.undo)
-        pane = gtk.VPaned()
-        pane.add(self.untimed)
-        pane.add(self.weekview)
-        weekviewbox.pack_start(self.weekviewheader, False, False)
-        weekviewbox.pack_start(pane, True, True)
+        self.weekview = WeekView(self.info, self.undo, self.history)
 
         uiman = gtk.UIManager ()
         actiongroup = MenuCommand.create_action_group(self)
@@ -260,7 +252,7 @@ class App(object):
         toolbar = uiman.get_widget("/upperToolbar")
         vbox.pack_start (toolbar, False, False)
 
-        vbox.pack_start(weekviewbox, True, True)
+        vbox.pack_start(self.weekview, True, True)
 
         toolbar = uiman.get_widget("/lowerToolbar")
 
@@ -324,11 +316,11 @@ class App(object):
         MenuCommand.update_actions(self)
         if self.dont_update_entry:
             return
-        if not (self.weekview.selection_recurrence is None):
-            text = self.weekview.selection_recurrence.toEnglish()
-        elif not (self.weekview.selected is None):
-            text = self.weekview.get_occurence_event(
-                self.weekview.selected).recurrence.toEnglish()
+        if not (self.info.selection_recurrence is None):
+            text = self.info.selection_recurrence.toEnglish()
+        elif not (self.info.selected is None):
+            text = self.weekview.timed.get_occurence_event(
+                self.info.selected).recurrence.toEnglish()
         else:
             text = ""
         self.selection_buffer.set_text(text)
@@ -351,6 +343,12 @@ class App(object):
     def save(self):
         self.model.save(self.path)
         return True
+
+    def switch_views(self):
+        if self.weekview.props.visible:
+            self.weekview.hide()
+        else:
+            self.weekview.show()
 
     def do_command(self, unused_action, command):
         cmd = command(self)

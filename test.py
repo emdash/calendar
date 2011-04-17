@@ -90,9 +90,9 @@ def basic_test(app):
 
 def test_select_area(app):
     yield Sleep(100)
-    cmd = weekview.SelectArea(app.weekview, [100, 100])
-    cmd.update((100, 100 + app.weekview.hour_height),
-               (0, app.weekview.hour_height),
+    cmd = weekview.SelectArea(app.weekview.timed, [100, 100])
+    cmd.update((100, 100 + app.weekview.timed.hour_height),
+               (0, app.weekview.timed.hour_height),
                True)
     
     yield Sleep()
@@ -108,7 +108,7 @@ def test_select_area(app):
     yield Sleep()
     
     cmd.do()
-    assert app.weekview.selection_recurrence == r
+    assert app.info.selection_recurrence == r
 
     yield Sleep()
 
@@ -125,15 +125,15 @@ def test_new_event(app):
     assert app.info.selection_recurrence == None
 
     cmd.undo()
-    assert app.weekview.selection_recurrence == r
+    assert app.info.selection_recurrence == r
 
     cmd.do()
-    assert app.weekview.selection_recurrence == None
+    assert app.info.selection_recurrence == None
 
 def test_select_and_delete_event(app):
-    cmd = weekview.SelectArea(app.weekview, (100, 100))
-    cmd.update((100, 100 + app.weekview.hour_height),
-               (0, app.weekview.hour_height))
+    cmd = weekview.SelectArea(app.weekview.timed, (100, 100))
+    cmd.update((100, 100 + app.weekview.timed.hour_height),
+               (0, app.weekview.timed.hour_height))
 
     r = app.info.selection_recurrence
 
@@ -142,14 +142,14 @@ def test_select_and_delete_event(app):
     yield Sleep()
     event = cmd.event
 
-    cmd = weekview.SelectPoint(app.weekview, 110, 110)
+    cmd = weekview.SelectPoint(app.weekview.timed, 110, 110)
     cmd.do()
     yield Sleep()
     assert app.info.selected == (event, 0)
 
     cmd = cal.DelEvent(app)
     cmd.do()
-    assert app.weekview.selected == None
+    assert app.weekview.timed.selected == None
     cmd.undo()
 
 for test in [basic_test,

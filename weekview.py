@@ -73,7 +73,7 @@ class WeekViewBase(CalendarWidget):
         cr.line_to(self.day_width, self.height)
         cr.stroke()
 
-class WeekViewHeader(WeekViewBase):
+class DayHeader(WeekViewBase):
 
     def __init__(self, info, history, *args, **kwargs):
         WeekViewBase.__init__(self, info, *args, **kwargs)
@@ -158,7 +158,7 @@ class UntimedEvents(WeekViewBase):
             cr.stroke()
         self.draw_comfort_lines(cr)
 
-class WeekView(WeekViewBase):
+class TimedEvents(WeekViewBase):
 
     __gtype_name__ = "WeekView"
 
@@ -469,6 +469,19 @@ class WeekView(WeekViewBase):
 
         self.get_occurence_event(self.selected).description = self.ti.get_text()
         self.queue_draw()
+
+class WeekView(gtk.VBox):
+
+    def __init__(self, info, undo, history):
+        gtk.VBox.__init__(self)
+        self.day_header = DayHeader(info, history)
+        self.timed = TimedEvents(info, history)
+        self.untimed = UntimedEvents(info, history)
+        pane = gtk.VPaned()
+        pane.add(self.untimed)
+        pane.add(self.timed)
+        self.pack_start(self.day_header, False, False)
+        self.pack_start(pane, True, True)
 
 class SelectPoint(Command):
 
