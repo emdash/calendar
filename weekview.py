@@ -54,10 +54,25 @@ class KineticScrollAnimation(Animation):
         if self._velocity == 0:
             self.stop()
 
-class WeekViewHeader(CalendarWidget):
+class WeekViewBase(CalendarWidget):
+
+    def clear_background(self, cr):
+        cr.rectangle(0, 0, self.width, self.height)
+        cr.set_source(settings.grid_bg_color)
+        cr.fill()
+
+    def draw_comfort_lines(self, cr):
+        cr.set_source(settings.comfort_line_color)
+        cr.rectangle(0, 0, self.width, self.height)
+        cr.stroke()
+        cr.move_to(self.day_width, 0)
+        cr.line_to(self.day_width, self.height)
+        cr.stroke()
+
+class WeekViewHeader(WeekViewBase):
 
     def __init__(self, info, history, *args, **kwargs):
-        CalendarWidget.__init__(self, info, *args, **kwargs)
+        WeekViewBase.__init__(self, info, *args, **kwargs)
         self.scrolling = MouseCommandDispatcher(
             history,
             (DragCalendarHorizontal,))
@@ -65,14 +80,10 @@ class WeekViewHeader(CalendarWidget):
         self.set_size_request(600, int(30))
 
     def paint(self, cr):
+        self.clear_background(cr)
         self.draw_day_headers(cr)
         self.draw_top_left_corner(cr)
-        cr.move_to(0, self.height)
-        cr.line_to(self.width, self.height)
-        cr.set_source(settings.comfort_line_color)
-        cr.move_to(self.day_width, 0)
-        cr.line_to(self.day_width, self.height)
-        cr.stroke()
+        self.draw_comfort_lines(cr)
 
     def draw_day_header(self, cr, nth_day):
         x = self.get_week_pixel_offset() + nth_day * self.day_width
@@ -117,7 +128,6 @@ class WeekViewHeader(CalendarWidget):
             settings.heading_outline_color,
             settings.text_color)
 
-class WeekView(CalendarWidget):
 
     __gtype_name__ = "WeekView"
 
@@ -132,11 +142,8 @@ class WeekView(CalendarWidget):
     handle_locations = None
 
     def __init__(self, info, undo, *args, **kwargs):
-        CalendarWidget.__init__(self, info, *args, **kwargs)
+        WeekViewBase.__init__(self, info, *args, **kwargs)
         self.editing = False
-                
-        self.model = Schedule("schedule.csv")
-        self.model.set_changed_cb(self.model_changed)
         self.occurrences = {}
         self.selected = None
         self.font_desc = pango.FontDescription("Sans 8")
@@ -149,9 +156,9 @@ class WeekView(CalendarWidget):
             undo,
             drag_commands = (DragCalendarVertical,
                              SetEventStart,
-                              SetEventEnd,
-                              MoveEvent,
-                              SelectArea),
+                             SetEventEnd,
+                             MoveEvent,
+                             SelectArea),
             click_commands = (SelectPoint,))
         self.dispatcher.observe(self)
 
@@ -161,9 +168,6 @@ class WeekView(CalendarWidget):
         self.cursor_showing = not self.cursor_showing
         self.queue_draw()
         return True
-
-    def model_changed(self):
-        self.queue_draw()
 
     def point_to_datetime(self, x, y, snap=True):
         x /= self.scale
@@ -249,11 +253,6 @@ class WeekView(CalendarWidget):
         if bottom.contains_point(point):
             return 2
         return 0
-
-    def clear_background(self, cr):
-        cr.rectangle(self.x, self.y, self.width, self.height)
-        cr.set_source(settings.grid_bg_color)
-        cr.fill()
 
     def draw_grid(self, cr):
         cr.save()
@@ -363,16 +362,6 @@ class WeekView(CalendarWidget):
 
             text = "%dh %dm" % (h, m)
             shapes.centered_text(cr, area, text, settings.text_color)
-
-    def draw_comfort_lines(self, cr):
-        cr.set_source(settings.comfort_line_color)
-        cr.move_to(self.x, 0)
-        cr.line_to(self.width, 0)
-        cr.stroke()
-
-        cr.move_to(self.day_width, self.y)
-        cr.line_to(self.day_width, self.height)
-        cr.stroke()
 
     def paint(self, cr):
         cr.identity_matrix()
