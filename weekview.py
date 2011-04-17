@@ -34,36 +34,16 @@ from dispatcher import MouseCommandDispatcher
 from schedule import Schedule
 
 from calendarwidget import CalendarWidget, CalendarInfo, scaled_property
-from calendarwidget import DateNotVisible
-from behavior import Animation
-
-def quantize(x, modulus):
-    return (x // modulus) * modulus
-
-class KineticScrollAnimation(Animation):
-
-    def flick(self, velocity):
-        self._velocity = velocity
-        self.start()
-
-    def step(self):
-        self.instance.info.date -= self._velocity
-        self._velocity *= 0.99
-        if 0 < abs(self._velocity) < 0.01:
-            self._velocity = 0
-        if self._velocity == 0:
-            self.stop()
+from calendarwidget import DateNotVisible, quantize, KineticScrollAnimation
 
 class WeekViewBase(CalendarWidget):
     
     _day_width = settings.day_width
     hour_height = gobject.property(type=float, default=settings.hour_height)
     day_width = gobject.property(type=float, default=settings.day_width)
-
-    def clear_background(self, cr):
-        cr.rectangle(0, 0, self.width, self.height)
-        cr.set_source(settings.grid_bg_color)
-        cr.fill()
+    
+    def get_week_pixel_offset(self):
+        return self.day_width - (self.date * self.day_width % self.day_width)
 
     def draw_comfort_lines(self, cr):
         cr.save()

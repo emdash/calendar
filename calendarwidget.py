@@ -24,6 +24,24 @@ import cairo
 import gobject
 import settings
 import datetime
+from behavior import Animation
+
+def quantize(x, modulus):
+    return (x // modulus) * modulus
+
+class KineticScrollAnimation(Animation):
+
+    def flick(self, velocity):
+        self._velocity = velocity
+        self.start()
+
+    def step(self):
+        self.instance.info.date -= self._velocity
+        self._velocity *= 0.99
+        if 0 < abs(self._velocity) < 0.01:
+            self._velocity = 0
+        if self._velocity == 0:
+            self.stop()
 
 class DateNotVisible(Exception):
 
@@ -74,6 +92,11 @@ class CustomWidget(gtk.DrawingArea):
     def do_notify(self, something, something_else):
         self.queue_draw()
 
+    def clear_background(self, cr):
+        cr.rectangle(0, 0, self.width, self.height)
+        cr.set_source(settings.grid_bg_color)
+        cr.fill()
+
     def do_expose(self, widget, event):
         self.paint(widget.window.cairo_create())
 
@@ -101,9 +124,6 @@ class CalendarWidget(CustomWidget):
         self.date = info.date
         self.selected = info.selected
         self.queue_draw()
-
-    def get_week_pixel_offset(self):
-        return self.day_width - (self.date * self.day_width % self.day_width)
     
     def days_visible(self):
         return int(self.width / self.day_width)
