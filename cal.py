@@ -28,7 +28,7 @@ from gettext import gettext as _
 from schedule import Schedule, Event
 from command import UndoStack, MenuCommand, Command
 from calendarwidget import CalendarInfo
-from weekview import WeekViewHeader, WeekView
+from weekview import WeekViewHeader, WeekView, UntimedEvents
 import recurrence
 import settings
 import parser
@@ -239,8 +239,12 @@ class App(object):
         self.info = CalendarInfo(self.model)
         self.weekviewheader = WeekViewHeader(self.info, self.history)
         self.weekview = WeekView(self.info, self.undo)
+        self.untimed = UntimedEvents(self.info, self.undo)
+        pane = gtk.VPaned()
+        pane.add(self.untimed)
+        pane.add(self.weekview)
         weekviewbox.pack_start(self.weekviewheader, False, False)
-        weekviewbox.pack_start(self.weekview, True, True)
+        weekviewbox.pack_start(pane, True, True)
 
         uiman = gtk.UIManager ()
         actiongroup = MenuCommand.create_action_group(self)

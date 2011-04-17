@@ -132,6 +132,32 @@ class WeekViewHeader(WeekViewBase):
             settings.heading_outline_color,
             settings.text_color)
 
+class UntimedEvents(WeekViewBase):
+
+    __gtype_name__ = "UntimedEvents"
+
+    def __init__(self, info, undo, *args, **kwargs):
+        WeekViewBase.__init__(self, info, *args, **kwargs)
+        self.info = info
+        self.undo = undo
+        self.set_size_request(600, 50)
+
+    def sort_allday_events_by_date(self):
+        events = {}
+        
+
+    def paint(self, cr):
+        self.clear_background(cr)
+        cr.set_source(settings.grid_line_color)
+        x = self.get_week_pixel_offset()
+        for i in xrange(0, (self.days_visible()) + 1):
+            # draw vertical lines
+            x += self.day_width
+            cr.move_to (x, 0)
+            cr.line_to (x, self.height)
+            cr.stroke()
+        self.draw_comfort_lines(cr)
+
 class WeekView(WeekViewBase):
 
     __gtype_name__ = "WeekView"
