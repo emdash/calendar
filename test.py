@@ -20,6 +20,7 @@
 # Boston, MA 02111-1307, USA.
 
 import cal
+import weekview
 import gobject
 import gtk
 import traceback
@@ -89,7 +90,7 @@ def basic_test(app):
 
 def test_select_area(app):
     yield Sleep(100)
-    cmd = cal.SelectArea(app.weekview, [100, 100])
+    cmd = weekview.SelectArea(app.weekview, [100, 100])
     cmd.update((100, 100 + app.weekview.hour_height),
                (0, app.weekview.hour_height),
                True)
@@ -130,7 +131,7 @@ def test_new_event(app):
     assert app.weekview.selection_recurrence == None
 
 def test_select_and_delete_event(app):
-    cmd = cal.SelectArea(app.weekview, (100, 100))
+    cmd = weekview.SelectArea(app.weekview, (100, 100))
     cmd.update((100, 100 + app.weekview.hour_height),
                (0, app.weekview.hour_height))
 
@@ -141,7 +142,7 @@ def test_select_and_delete_event(app):
     yield Sleep()
     event = cmd.event
 
-    cmd = cal.SelectPoint(app.weekview, 110, 110)
+    cmd = weekview.SelectPoint(app.weekview, 110, 110)
     cmd.do()
     yield Sleep()
     assert app.info.selected == (event, 0)
