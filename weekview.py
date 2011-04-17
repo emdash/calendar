@@ -62,7 +62,7 @@ class WeekViewHeader(CalendarWidget):
             history,
             (DragCalendarHorizontal,))
         self.scrolling.observe(self)
-        self.set_size_request(600, int(self.hour_height))
+        self.set_size_request(600, int(30))
 
     def paint(self, cr):
         self.draw_day_headers(cr)
