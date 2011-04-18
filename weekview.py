@@ -45,6 +45,17 @@ class WeekViewBase(CalendarWidget):
     def get_week_pixel_offset(self):
         return self.day_width - (self.date * self.day_width % self.day_width)
 
+    def date_to_x(self, date):
+        return (date.toordinal() - self.date + 1) * self.day_width
+
+    def days_visible(self):
+        return int(self.width / self.day_width)
+
+    def dates_visible(self):
+        s = datetime.date.fromordinal(int(self.date))
+        e = datetime.date.fromordinal(int(self.date) + self.days_visible())
+        return s, e
+
     def draw_comfort_lines(self, cr):
         cr.save()
         cr.set_line_width(2.0)
@@ -230,10 +241,9 @@ class TimedEvents(WeekViewBase):
         if not self.date_visible(dt):
             raise DateNotVisible(dt)
         
-        return (
-            ((dt.toordinal() - self.date + 1) * self.day_width),
-            (dt.hour + dt.minute / 60.0)
-            * self.hour_height + self.y_scroll_offset)
+        return (self.date_to_x(dt),
+                (dt.hour + dt.minute / 60.0)
+                * self.hour_height + self.y_scroll_offset)
 
     def area_from_start_end(self, start, end):
         start = self.datetime_to_point(start)
@@ -361,11 +371,6 @@ class TimedEvents(WeekViewBase):
                                        cursor_pos)
            
         self.occurrences[(event, period.ordinal)] = (event, area, period)
-
-    def dates_visible(self):
-        s = datetime.date.fromordinal(int(self.date))
-        e = datetime.date.fromordinal(int(self.date) + self.days_visible())
-        return s, e
 
     def draw_events(self, cr):
         cr.save()

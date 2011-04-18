@@ -125,9 +125,6 @@ class CalendarWidget(CustomWidget):
         self.date = info.date
         self.selected = info.selected
         self.queue_draw()
-    
-    def days_visible(self):
-        return int(self.width / self.day_width)
 
     def get_date(self, i):
         return datetime.date.fromordinal(int(i))
