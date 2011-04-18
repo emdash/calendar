@@ -51,7 +51,7 @@ class MonthView(CalendarWidget):
         return self.width / 7
 
     header_height = 30
-    day_height = 75
+    day_height = 80
 
     def __init__(self, info, undo, history):
         CalendarWidget.__init__(self, info)
