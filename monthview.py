@@ -35,7 +35,7 @@ from schedule import Schedule
 
 from calendarwidget import CalendarWidget, CalendarInfo, scaled_property
 from calendarwidget import DateNotVisible
-from behavior import Animation
+from calendarwidget import KineticScrollAnimation
 
 today = datetime.date.today()
 
@@ -57,6 +57,10 @@ class MonthView(CalendarWidget):
         CalendarWidget.__init__(self, info)
         self.undo = undo
         self.history = history
+        self.dispatcher = MouseCommandDispatcher(
+            history,
+            drag_commands = (DragCalendarVertical,))
+        self.dispatcher.observe(self)
 
     def get_week_pixel_offset(self):
         return self.header_height - ((self.date / 7) * self.day_height % self.day_height)
@@ -108,3 +112,38 @@ class MonthView(CalendarWidget):
                 settings.comfort_line_color,
                 settings.text_color)
             x += self.day_width
+
+class DragCalendarVertical(MouseCommand):
+
+    cursor = gtk.gdk.Cursor(gtk.gdk.HAND1)
+
+    @classmethod
+    def can_do(cls, instance, abs):
+        return (abs[1] >= instance.header_height)
+
+    def __init__(self, instance, abs):
+        self.mdown = abs
+        self.instance = instance
+        self.pos = instance.date
+        self.flick_pos = None
+        self.scroller = KineticScrollAnimation(30, finished_cb=self._upate_pos)
+
+    def do(self):
+        if self.flick_pos is None:
+            self.instance.info.date = (self.pos - (self.rel[1] * 7 / self.instance.scale) /
+                                  self.instance.day_height)
+        else:
+            self.instance.info.date = self.flick_pos
+
+    def undo(self):
+        self.instance.date = self.pos
+
+    def flick_start(self):
+        self.scroller.observe(self.instance)
+        self.scroller.flick(self.flick_velocity[1] * 7 / self.instance.day_height)
+
+    def flick_stop(self):
+        self.scroller.stop()
+
+    def _upate_pos(self):
+        self.flick_pos = self.instance.date
