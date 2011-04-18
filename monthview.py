@@ -68,6 +68,47 @@ class MonthView(CalendarWidget):
     def weeks_visible(self):
         return int(self.height / self.day_height) + 1
 
+    def dates_visible(self):
+        ordinal = int(self.date) - (int(self.date) % 7) + 1
+        return (datetime.date.fromordinal(ordinal),
+                datetime.date.fromordinal(ordinal + 7 * self.weeks_visible()))
+
+    def get_events_by_date(self):
+        events = {}
+        for event, occurrence in self.info.model.timedOccurrences(*self.dates_visible()):
+            if not (occurrence.date in events):
+                events[occurrence.date] = []
+            events[occurrence.date].append(event)
+        return events
+
+    def draw_events(self, cr, x, y, events):
+        if not events:
+            return
+        
+        cr.save()
+        cr.rectangle(x, y, self.day_width, self.day_height)
+        cr.clip()
+
+        y += 10
+        
+        for e in events:
+            area = shapes.Area(x, y, self.day_width, 20).shrink(3, 3)
+            shapes.filled_box(
+                cr,
+                area,
+                settings.default_event_bg_color,
+                settings.default_event_bg_color)
+            
+            shapes.left_aligned_text(
+                cr,
+                area,
+                e.description,
+                settings.default_event_text_color)
+
+            y += 20
+        
+        cr.restore()
+
     def paint(self, cr):
         cr.rectangle(0, 0, self.width, self.height)
         cr.set_source(settings.grid_line_color)
@@ -76,6 +117,9 @@ class MonthView(CalendarWidget):
         ordinal = int(self.date) - (int(self.date) % 7) + 1
         cr.set_source(settings.text_color)
         y = self.get_week_pixel_offset()
+
+        events = self.get_events_by_date()
+        
         for row in xrange(self.weeks_visible()):
             for col in xrange(7):
                 x = self.day_width * col
@@ -98,6 +142,7 @@ class MonthView(CalendarWidget):
                     area,
                     date.strftime(fmt),
                     settings.text_color)
+                self.draw_events(cr, x, y, events.get(date, None))
                 ordinal += 1
             y += self.day_height
 
