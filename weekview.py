@@ -487,7 +487,7 @@ class WeekView(gtk.VBox):
     def __init__(self, info, undo, history):
         gtk.VBox.__init__(self)
         self.day_header = DayHeader(info, history)
-        self.timed = TimedEvents(info, history)
+        self.timed = TimedEvents(info, undo)
         self.untimed = UntimedEvents(info, history)
         pane = gtk.VPaned()
         pane.add(self.untimed)
