@@ -128,9 +128,9 @@ class MonthView(CalendarWidget):
                 date = datetime.date.fromordinal(ordinal)
                 area = shapes.Area(x, y, self.day_width, self.day_height).shrink(1, 1)
                 if (date.month % 2) == 0:
-                    fill_color = settings.weekday_bg_color
+                    fill_color = settings.even_month_bg_color
                 else:
-                    fill_color = settings.weekend_bg_color
+                    fill_color = settings.odd_month_bg_color
                 if date.day == 1:
                     fmt = "%b %d"
                 else:
@@ -150,14 +150,17 @@ class MonthView(CalendarWidget):
 
         x = 0
         cr.set_antialias(cairo.ANTIALIAS_NONE)
+        bg_color = settings.weekday_bg_color
         for i in xrange(7):
+            if i > 4:
+                bg_color = settings.weekend_bg_color
             area = shapes.Area(x, 0, self.day_width, self.header_height)
             shapes.labeled_box(
                 cr,
                 area,
                 day_names[i],
-                settings.grid_bg_color,
-                settings.comfort_line_color,
+                bg_color,
+                settings.heading_outline_color,
                 settings.text_color)
             x += self.day_width
 
