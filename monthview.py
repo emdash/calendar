@@ -112,7 +112,9 @@ class MonthView(CalendarWidget):
     def paint(self, cr):
         cr.rectangle(0, 0, self.width, self.height)
         cr.set_source(settings.grid_line_color)
-        cr.fill()
+        cr.fill_preserve()
+        cr.set_source(settings.comfort_line_color)
+        cr.stroke()
         
         ordinal = int(self.date) - (int(self.date) % 7) + 1
         cr.set_source(settings.text_color)
@@ -147,6 +149,7 @@ class MonthView(CalendarWidget):
             y += self.day_height
 
         x = 0
+        cr.set_antialias(cairo.ANTIALIAS_NONE)
         for i in xrange(7):
             area = shapes.Area(x, 0, self.day_width, self.header_height)
             shapes.labeled_box(
