@@ -651,7 +651,6 @@ class DragCalendarHorizontal(MouseCommand):
         return (0 <= abs[0] / instance.scale <= instance.width and 
                 0 <= abs[1] / instance.scale <= instance.hour_height)
 
-
     def __init__(self, instance, abs):
         self.mdown = abs
         self.instance = instance
