@@ -268,7 +268,8 @@ class App(object):
         vbox.pack_end (toolbar, False, False)
 
         w.add(vbox)
-        w.show_all()
+        w.show()
+        vbox.show()
         self.monthview.hide()
         self.window = w
         self.weekview.connect("notify::selected", self.update_actions)

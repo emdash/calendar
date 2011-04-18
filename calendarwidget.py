@@ -84,6 +84,7 @@ class CustomWidget(gtk.DrawingArea):
         self.set_size_request(600, 400)
         self.set_events(gtk.gdk.ALL_EVENTS_MASK)
         self.props.can_focus = True
+        self.show()
         
     def size_allocate_cb(self, widget, allocation):
         self.width = allocation.width

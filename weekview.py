@@ -492,8 +492,10 @@ class WeekView(gtk.VBox):
         pane = gtk.VPaned()
         pane.add(self.untimed)
         pane.add(self.timed)
+        pane.show()
         self.pack_start(self.day_header, False, False)
         self.pack_start(pane, True, True)
+        self.show()
 
 class SelectPoint(Command):
 
