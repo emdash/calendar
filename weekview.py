@@ -148,20 +148,44 @@ class UntimedEvents(WeekViewBase):
 
     def sort_allday_events_by_date(self):
         events = {}
-        
+        for event, period in self.info.model.timedOccurrences(*self.dates_visible()):
+            if period.all_day:
+                date = period.date
+                if not date in events:
+                    events[date] = []
+                events[date].append(event.description)
+        return events
 
     def paint(self, cr):
         self.clear_background(cr)
         cr.set_source(settings.grid_line_color)
         cr.set_line_width(settings.grid_line_width)
-        cr.set_antialias(cairo.ANTIALIAS_NONE)
+        
+        events = self.sort_allday_events_by_date()
         x = self.get_week_pixel_offset()
+
+        cr.save()
+        cr.set_antialias(cairo.ANTIALIAS_NONE)
         for i in xrange(0, (self.days_visible()) + 1):
-            # draw vertical lines
             x += self.day_width
             cr.move_to (x, 0)
             cr.line_to (x, self.height)
-            cr.stroke()
+        cr.stroke()
+        cr.restore()
+
+        cr.save()
+        cr.rectangle(self.day_width, 0, self.width - self.day_width, self.height)
+        cr.clip()
+        for date, evts in events.iteritems():
+            y = 0
+            x = self.date_to_x(date)
+            for event in evts:
+                area = shapes.Area(x, y, self.day_width, 20).shrink(3, 2)
+                shapes.filled_box(cr, area, settings.default_event_bg_color)
+                shapes.left_aligned_text(cr, area, event, settings.text_color)
+                y += 20
+        cr.restore()
+            
         self.draw_comfort_lines(cr)
 
 class TimedEvents(WeekViewBase):
