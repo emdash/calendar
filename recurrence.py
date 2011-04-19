@@ -312,6 +312,9 @@ class Offset(Node):
         self.offset = offset
 
     def toEnglish(self):
+        if not self.offset:
+            return self.child.toEnglish()
+        
         if self.offset < datetime.timedelta():
             fmt = "%s before (%s)"
         else:
