@@ -218,7 +218,7 @@ class TimedEvents(WeekViewBase):
             drag_commands = (DragCalendarVertical,
                              SetEventStart,
                              SetEventEnd,
-                             MoveEvent,
+                             MoveTimedEvent,
                              SelectArea),
             click_commands = (SelectPoint,))
         self.dispatcher.observe(self)
@@ -584,7 +584,7 @@ class SelectArea(MouseCommand):
         self.instance.info.selection_recurrence = self.selection_recurrence
 
 
-class MoveEvent(MouseCommand):
+class MoveTimedEvent(MouseCommand):
 
     cursor = gtk.gdk.Cursor(gtk.gdk.HAND2)
 
@@ -592,7 +592,7 @@ class MoveEvent(MouseCommand):
     def create_for_point(cls, instance, abs):
         event = instance.point_to_event(*abs)
         if event:
-            return MoveEvent(instance, event, abs)
+            return MoveTimedEvent(instance, event, abs)
 
     @classmethod
     def can_do(cls, instance, abs):
@@ -605,11 +605,17 @@ class MoveEvent(MouseCommand):
         self.old = event.recurrence
         self.event = event
         self.offset = instance.day_width / 2
+        self.allday = self.old.toAllday()
 
     def do(self):
         x, y = self.rel
         delta = self.instance.point_to_timedelta(int(x + self.offset), y, self.shift)
-        self.event.recurrence = self.old + delta
+        if self.abs[1] < 0:
+            delta = datetime.timedelta(delta.days)
+            self.event.recurrence = self.allday + delta
+        else:
+
+            self.event.recurrence = self.old + delta
         return True
 
     def undo(self):

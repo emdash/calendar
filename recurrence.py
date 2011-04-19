@@ -176,7 +176,10 @@ class Node(object):
                     count = self.ordinal(date)
                 yield Occurrence(count, self, date)
                 count += 1
-                
+
+    def toAllday(self):
+        return self
+
 class DateSet(Node):
 
     def __init__(self, *children):
@@ -184,6 +187,7 @@ class DateSet(Node):
         self.dates = set(children)
 
     def __add__(self, delta):
+        assert not (datetime is None)
         return DateSet(*(c + delta for c in self.dates))
 
     def toEnglish(self):
@@ -324,6 +328,9 @@ class Offset(Node):
     def __add__(self, delta):
         return Offset(self.child, self.offset + delta)
 
+    def toAllday(self):
+        return Offset(self.child.toAllday(), self.offset)
+
     def timedOccurrences(self, start, end):
         return ((c + self.offset for c in self.child.timedOccurrences(start, end)))
         
@@ -412,6 +419,9 @@ class And(Node):
     def __add__(self, delta):
         return And(self.a + delta, self.b + delta)
 
+    def toAllday(self):
+        return And(self.a.toAllday(), self.b.toAllday())
+
     def toEnglish(self):
         return "(%s) and (%s)" % (self.a.toEnglish(), self.b.toEnglish())
 
@@ -435,6 +445,9 @@ class Except(Node):
     def __add__(self, delta):
         return Except(self.include + delta, self.exclude + delta)
 
+    def toAllday(self):
+        return Except(self.include.toAllday(), self.exclude.toAllday())
+
     def toEnglish(self):
         return "(%s) except (%s)" % (self.include.toEnglish(), self.exclude.toEnglish())
 
@@ -449,6 +462,7 @@ class Except(Node):
         for value in include:
             if not value.date in exclude:
                 yield value
+
 
 class Filter(Node):
 
@@ -469,6 +483,9 @@ class Filter(Node):
 
     def filter(self, period):
         raise NotImplemented
+
+    def toAllday(self):
+        return self.child.toAllday()
 
 class From(Filter):
 
@@ -526,6 +543,9 @@ class Period(Filter):
     def timedOccurrences(self, start, end):
         for c in self.child.timedOccurrences(start, end):
             yield c.clone(creator=self, start=self.start, end=self.end)
+
+    def toAllday(self):
+        return self.child.toAllday()
 
 if __name__ == '__main__':
 
