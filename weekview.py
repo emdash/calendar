@@ -715,8 +715,7 @@ class DragCalendarVertical(MouseCommand):
 
     @classmethod
     def can_do(cls, instance, abs):
-        return ((instance.x <= abs[0] <= instance.x + instance.day_width) and
-                (abs[1] > instance.y + instance.hour_height))
+        return instance.x <= abs[0] <= (instance.x + instance.day_width)
 
     def __init__(self, instance, abs):
         self.instance = instance
