@@ -299,7 +299,7 @@ class App(object):
         text = b.get_text(b.get_start_iter(), b.get_end_iter())
 
         try:
-            if not (self.weekview.selected is None):
+            if not (self.info.selected is None):
                 self.undo.commit(SetEventRecurrence(self, text))
             else:
                 self.undo.commit(SelectRecurrence(self, text))
