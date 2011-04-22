@@ -126,7 +126,7 @@ class MonthView(CalendarWidget):
             for col in xrange(7):
                 x = self.day_width * col
                 date = datetime.date.fromordinal(ordinal)
-                area = shapes.Area(x, y, self.day_width, self.day_height).shrink(1, 1)
+                area = shapes.Area(x, y, self.day_width, self.day_height).shrink(0.5, 0.5)
                 if (date.month % 2) == 0:
                     fill_color = settings.even_month_bg_color
                 else:
@@ -163,6 +163,13 @@ class MonthView(CalendarWidget):
                 settings.heading_outline_color,
                 settings.text_color)
             x += self.day_width
+                    
+        cr.set_source(settings.gloss_gradient)
+        m = cairo.Matrix()
+        m.scale(1.0/self.width, 1.0/self.header_height)
+        settings.gloss_gradient.set_matrix(m)
+        cr.rectangle(0, 0, self.width, self.header_height / 2)
+        cr.fill()
 
 class DragCalendarVertical(MouseCommand):
 

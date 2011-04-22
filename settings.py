@@ -40,9 +40,9 @@ grid_bg_color = cairo.SolidPattern(1.0, 1.0, 1.0)
 grid_line_color = cairo.SolidPattern(0.8, 0.8, 0.8)
 comfort_line_color = grid_line_color
 grid_line_width = 1.0
-even_month_bg_color = cairo.SolidPattern(0.8, 0.8, 0.8)
-odd_month_bg_color = cairo.SolidPattern(0.9, 0.9, 0.9)
-comfort_line_color = cairo.SolidPattern(0.55, 0.55, 0.55)
+even_month_bg_color = cairo.SolidPattern(1.0, 1.0, 1.0)
+odd_month_bg_color = cairo.SolidPattern(0.95, 0.95, 0.95)
+comfort_line_color = grid_line_color
 
 # headings
 heading_outline_color = grid_line_color
