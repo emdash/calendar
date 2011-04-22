@@ -36,16 +36,20 @@ text_color = cairo.SolidPattern(0, 0, 0, .75)
 cursor_color = cairo.SolidPattern(0, 0, 0, 1)
 
 # grid
-grid_line_color = cairo.SolidPattern(1, 1, 1)
-grid_bg_color = cairo.SolidPattern(0.8, 0.8, 0.8)
-comfort_line_color = cairo.SolidPattern(0.55, 0.55, 0.55)
+grid_bg_color = cairo.SolidPattern(1.0, 1.0, 1.0)
+grid_line_color = cairo.SolidPattern(0.8, 0.8, 0.8)
+comfort_line_color = grid_line_color
+grid_line_width = 1.0
 
 # headings
-heading_outline_color = cairo.SolidPattern(1, 1, 1)
+heading_outline_color = grid_line_color
 weekday_bg_color = cairo.SolidPattern(0.75, 0.85, 0.75)
 weekend_bg_color = cairo.SolidPattern(0.75, 0.75, 0.85)
-hour_heading_color = cairo.SolidPattern(0.75, 0.75, 0.75)
+hour_heading_color = grid_bg_color
 corner_bg_color = cairo.SolidPattern(0.75, 0.75, 0.75)
+gloss_gradient = cairo.LinearGradient(0, 0, 0, 1)
+gloss_gradient.add_color_stop_rgba(0, 1, 1, 1, 0.8)
+gloss_gradient.add_color_stop_rgba(0.5, 1, 1, 1, 0.20) 
 
 # selection
 handle_bg_color = cairo.SolidPattern(0.0, 0.0, 0.0, 0.55)
@@ -54,5 +58,6 @@ marquee_fill_color = cairo.SolidPattern(0, 0, 0, 0.25)
 marquee_text_color = cairo.SolidPattern(0, 0, 0, 0.75)
 
 # default event color
-default_event_bg_color = cairo.SolidPattern(0.55, 0.55, 0.55)
-default_event_text_color = cairo.SolidPattern(0, 0, 0)
+default_event_bg_color = cairo.SolidPattern(0.15, 0.15, 0.70, 0.5)
+default_event_outline_color = cairo.SolidPattern(0.15, 0.15, 0.70, 0.85)
+default_event_text_color = cairo.SolidPattern(0.15, 0.15, 0.70, 0.9)

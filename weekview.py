@@ -66,12 +66,15 @@ class WeekViewBase(CalendarWidget):
         cr.fill()
 
     def draw_comfort_lines(self, cr):
+        cr.save()
+        cr.set_line_width(2.0)
         cr.set_source(settings.comfort_line_color)
         cr.rectangle(0, 0, self.width, self.height)
         cr.stroke()
         cr.move_to(self.day_width, 0)
         cr.line_to(self.day_width, self.height)
         cr.stroke()
+        cr.restore()
 
 class DayHeader(WeekViewBase):
 
@@ -88,6 +91,16 @@ class DayHeader(WeekViewBase):
         self.draw_day_headers(cr)
         self.draw_top_left_corner(cr)
         self.draw_comfort_lines(cr)
+        
+        cr.save()
+        cr.rectangle(1, 0, self.width - 2, self.height / 2)
+        cr.set_source(settings.gloss_gradient)
+        m = cairo.Matrix()
+        m.scale(1.0/self.width, 1.0/self.height)
+        settings.gloss_gradient.set_matrix(m)
+        cr.fill()
+        cr.restore()
+
 
     def draw_day_header(self, cr, nth_day):
         x = self.get_week_pixel_offset() + nth_day * self.day_width
@@ -149,6 +162,8 @@ class UntimedEvents(WeekViewBase):
     def paint(self, cr):
         self.clear_background(cr)
         cr.set_source(settings.grid_line_color)
+        cr.set_line_width(settings.grid_line_width)
+        cr.set_antialias(cairo.ANTIALIAS_NONE)
         x = self.get_week_pixel_offset()
         for i in xrange(0, (self.days_visible()) + 1):
             # draw vertical lines
@@ -287,13 +302,15 @@ class TimedEvents(WeekViewBase):
 
     def draw_grid(self, cr):
         cr.save()
-        cr.rectangle(self.day_width, 0, 
-            self.width - self.day_width, self.height)
+        cr.rectangle(0, 0, 
+            self.width, self.height)
         cr.clip()
 
         cr.set_source(settings.grid_line_color)
+        cr.set_line_width(settings.grid_line_width)
+        cr.set_antialias(cairo.ANTIALIAS_NONE)
         for i in xrange(1, 25):
-            cr.move_to(self.day_width, self.y_scroll_offset + i * self.hour_height)
+            cr.move_to(0, self.y_scroll_offset + i * self.hour_height)
             cr.line_to(self.width, self.y_scroll_offset + i * self.hour_height)
             cr.stroke()
 
@@ -306,6 +323,7 @@ class TimedEvents(WeekViewBase):
             cr.move_to (x, 0)
             cr.line_to (x, max_height)
             cr.stroke()
+        cr.restore()
         
     def draw_hour_header(self, cr, hour):
         area = shapes.Area(0,
@@ -313,12 +331,10 @@ class TimedEvents(WeekViewBase):
                            self.day_width,
                            self.hour_height)
         
-        shapes.labeled_box(
+        shapes.centered_text(
             cr,
             area,
             "%2d:00" % hour,
-            settings.hour_heading_color,
-            settings.heading_outline_color,
             settings.text_color)
 
     def draw_hour_headers(self, cr):
@@ -333,11 +349,24 @@ class TimedEvents(WeekViewBase):
 
     def draw_event(self, cr, event, period):
         try:
-            area = self.area_from_start_end(period.start, period.end).shrink(2, 0)
+            area = self.area_from_start_end(period.start, period.end)
         except DateNotVisible:
             return
         
-        shapes.filled_box(cr, area, settings.default_event_bg_color)
+        #shapes.filled_box(cr, area, settings.default_event_bg_color)
+        shapes.rounded_rect(cr, area, 5)
+        m = cairo.Matrix()
+        m.scale(1.0/area.width, 1.0/area.height)
+        m.translate(-area.x, -area.y)
+
+        settings.default_event_bg_color.set_matrix(m)
+        cr.set_source(settings.default_event_bg_color)
+        cr.fill_preserve()
+        #cr.set_line_width(1.0)
+        cr.set_source(settings.default_event_outline_color)
+        settings.default_event_outline_color.set_matrix(m)
+        #cr.set_antialias(cairo.ANTIALIAS_SUBPIXEL)
+        cr.stroke()
 
         if (self.selected and
             (event == self.selected[0]) and
@@ -347,7 +376,7 @@ class TimedEvents(WeekViewBase):
         else:
             cursor_pos = -1
 
-        lyt = shapes.left_aligned_text(cr, area, event.description,
+        lyt = shapes.left_aligned_text(cr, area.shrink(1, 3), event.description,
                                        settings.default_event_text_color,
                                        cursor_pos)
            
@@ -359,6 +388,9 @@ class TimedEvents(WeekViewBase):
         return s, e
 
     def draw_events(self, cr):
+        cr.save()
+        cr.rectangle(self.day_width, 0, self.width - self.day_width, self.height)
+        cr.clip()
         self.occurrences = {}
         for evt, period in self.model.timedOccurrences(*self.dates_visible()):
             if period.all_day:

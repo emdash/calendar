@@ -212,6 +212,31 @@ def downward_tab(cr, area):
     cr.fill()
 
 @subpath
+def rounded_rect(cr, area, r):
+    x = area.x
+    y = area.y
+    w = area.width
+    h = area.height
+
+    "Draw a rounded rectangle"
+    #   A****BQ
+    #  H      C
+    #  *      *
+    #  G      D
+    #   F****E
+
+    cr.move_to(x+r,y)                      # Move to A
+    cr.line_to(x+w-r,y)                    # Straight line to B
+    cr.curve_to(x+w,y,x+w,y,x+w,y+r)       # Curve to C, Control points are both at Q
+    cr.line_to(x+w,y+h-r)                  # Move to D
+    cr.curve_to(x+w,y+h,x+w,y+h,x+w-r,y+h) # Curve to E
+    cr.line_to(x+r,y+h)                    # Line to F
+    cr.curve_to(x,y+h,x,y+h,x,y+h-r)       # Curve to G
+    cr.line_to(x,y+r)                      # Line to H
+    cr.curve_to(x,y,x,y,x+r,y)             # Curve to A
+    return
+
+@subpath
 def upward_triangle(cr, area):
     cr.move_to(area.center_x, area.y)
     cr.line_to(area.x2, area.y2)
