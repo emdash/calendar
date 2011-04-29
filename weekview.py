@@ -180,9 +180,12 @@ class UntimedEvents(WeekViewBase):
             y = 0
             x = self.date_to_x(date)
             for event in evts:
-                area = shapes.Area(x, y, self.day_width, 20).shrink(3, 2)
-                shapes.filled_box(cr, area, settings.default_event_bg_color)
-                shapes.left_aligned_text(cr, area, event, settings.text_color)
+                th = shapes.text_height(cr, self.day_width, event)
+                area = shapes.Area(x, y + 2, self.day_width, th).shrink(3, 0)
+                shapes.filled_box(cr, area, settings.default_event_bg_color,
+                                  settings.default_event_outline_color)
+                shapes.left_aligned_text(cr, area, event,
+                                         settings.default_event_text_color)
                 y += 20
         cr.restore()
             

@@ -116,6 +116,11 @@ def draw_cursor(cr, lyt, area, index):
     cr.line_to(area.x + x + 2, area.y + y + height)
     cr.stroke()
 
+def text_height(cr, width, text):
+    pcr = pangocairo.CairoContext(cr)
+    lyt = create_layout(pcr, text, width)
+    return lyt.get_pixel_size()[1]
+
 def text_function(func):
     
     def draw_pango_text(cr, area, text, color, cursor_pos=-1):
