@@ -366,7 +366,7 @@ class TimedEvents(WeekViewBase):
 
     def draw_event(self, cr, event, period):
         try:
-            area = self.area_from_start_end(period.start, period.end)
+            area = self.area_from_start_end(period.start, period.end).shrink(3, 0)
         except DateNotVisible:
             return
         
