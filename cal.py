@@ -171,7 +171,7 @@ class GoToSelected(MenuCommand):
         self.date = self.app.info.date
 
     def do(self):
-        self.app.info.date = self.selected.start.toordinal()
+        self.app.info.date = self.selected[1]
 
     def undo(self):
         self.app.info.date = self.date
@@ -183,7 +183,7 @@ class ZoomIn(MenuCommand):
     undoable = False
 
     def do(self):
-        self.app.weekview.scale = min(self.app.weekview.scale + 0.10, 10)
+        self.app.weekview.zoom_in()
 
 class ZoomOut(MenuCommand):
 
@@ -192,7 +192,7 @@ class ZoomOut(MenuCommand):
     undoable = False
 
     def do(self):
-        self.app.weekview.scale = max(self.app.weekview.scale - 0.10, 0.1)
+        self.app.weekview.zoom_out()
 
 class SwitchViews(MenuCommand):
 

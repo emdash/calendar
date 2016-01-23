@@ -78,10 +78,11 @@ class DayHeader(WeekViewBase):
         self.set_size_request(600, int(30))
 
     def paint(self, cr):
+        cr.identity_matrix()
+
         self.clear_background(cr)
         self.draw_day_headers(cr)
         self.draw_top_left_corner(cr)
-        self.draw_comfort_lines(cr)
         
         cr.save()
         cr.rectangle(1, 0, self.width - 2, self.height / 2)
@@ -94,7 +95,9 @@ class DayHeader(WeekViewBase):
 
 
     def draw_day_header(self, cr, nth_day):
-        x = self.get_week_pixel_offset() + nth_day * self.day_width
+        x = self.scale * (self.get_week_pixel_offset() + 
+                          nth_day * self.day_width)
+
         leftmost_day = int(self.date)
         
         date = self.get_date(leftmost_day + nth_day)
@@ -105,7 +108,7 @@ class DayHeader(WeekViewBase):
         else:
             bgcolor = settings.weekend_bg_color
 
-        area = shapes.Area(x, 0, self.day_width, self.height)
+        area = shapes.Area(x, 0, self.day_width * self.scale, self.height)
 
         shapes.labeled_box(
             cr,
@@ -117,8 +120,9 @@ class DayHeader(WeekViewBase):
 
     def draw_day_headers(self, cr):
         cr.save()
-        cr.rectangle(self.day_width, 0, self.width - self.day_width,
-            self.height)
+        cr.rectangle(self.day_width * self.scale,
+                     0, self.width - self.day_width * self.scale,
+                     self.height)
         cr.clip()
 
         for i in xrange(0, (self.days_visible()) + 1):
@@ -126,7 +130,7 @@ class DayHeader(WeekViewBase):
         cr.restore()
         
     def draw_top_left_corner(self, cr):
-        area = shapes.Area(0, 0, self.day_width, self.height)
+        area = shapes.Area(0, 0, self.day_width * self.scale, self.height)
 
         shapes.labeled_box(
             cr,
@@ -157,6 +161,9 @@ class UntimedEvents(WeekViewBase):
         return events
 
     def paint(self, cr):
+        cr.identity_matrix()
+        cr.scale(self.scale, self.scale)
+
         self.clear_background(cr)
         cr.set_source(settings.grid_line_color)
         cr.set_line_width(settings.grid_line_width)
@@ -528,6 +535,19 @@ class WeekView(gtk.VBox):
         self.pack_start(self.day_header, False, False)
         self.pack_start(pane, True, True)
         self.show()
+
+    def zoom_in(self):
+        scale = self.day_header.scale
+        self.set_scale(scale + 0.1);
+
+    def zoom_out(self):
+        scale = self.day_header.scale
+        self.set_scale(scale - 0.1);
+
+    def set_scale(self, scale):
+        self.day_header.scale = scale
+        self.timed.scale = scale
+        self.untimed.scale = scale
 
 class SelectPoint(Command):
 
